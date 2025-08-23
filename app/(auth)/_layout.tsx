@@ -29,6 +29,16 @@ export default function AuthLayout() {
       />
       
       <Tabs.Screen
+        name="reservation"
+        options={{ 
+          title: "Reservation",
+          tabBarIcon: ({ color, size }) => (
+            <Entypo name="plus" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="profile"
         options={{ 
           title: "Profile",
