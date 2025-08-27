@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import Entypo from '@expo/vector-icons/Entypo';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { Redirect, Tabs } from "expo-router";
 
 export default function AuthLayout() {
@@ -33,7 +34,7 @@ export default function AuthLayout() {
         options={{ 
           title: "Reservation",
           tabBarIcon: ({ color, size }) => (
-            <Entypo name="plus" size={size} color={color} />
+            <FontAwesome name="calendar-plus-o" size={size} color={color} />
           ),
         }}
       />
@@ -43,7 +44,7 @@ export default function AuthLayout() {
         options={{ 
           title: "Profile",
           tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="user" size={size} color={color} />
+            <FontAwesome5 name="user" size={size} color={color} />
           ),
         }}
       />

@@ -1,14 +1,17 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, ReactNode, useContext, useState } from "react";
 
 type ReservationContextType = {
+  user_id: number | null;
   facility: string | null;
-  date: string | null;
-  start_time: string | null;
-  end_time: string | null;
+  date: Date | null;
+  start_time: Date | null;
+  end_time: Date | null;
+  fee: number | null;  // nullable fee
   setFacility: React.Dispatch<React.SetStateAction<string | null>>;
-  setDate: React.Dispatch<React.SetStateAction<string | null>>;
-  setStartTime: React.Dispatch<React.SetStateAction<string | null>>;
-  setEndTime: React.Dispatch<React.SetStateAction<string | null>>;
+  setDate: React.Dispatch<React.SetStateAction<Date | null>>;
+  setStartTime: React.Dispatch<React.SetStateAction<Date | null>>;
+  setEndTime: React.Dispatch<React.SetStateAction<Date | null>>;
+  setFee: React.Dispatch<React.SetStateAction<number | null>>; // setter
   resetReservation: () => void;
 };
 
@@ -17,29 +20,36 @@ const ReservationContext = createContext<ReservationContextType | undefined>(
 );
 
 export const ReservationProvider = ({ children }: { children: ReactNode }) => {
+  const [user_id, setUserId] = useState<number | null>(null);
   const [facility, setFacility] = useState<string | null>(null);
-  const [date, setDate] = useState<string | null>(null);
-  const [start_time, setStartTime] = useState<string | null>(null);
-  const [end_time, setEndTime] = useState<string | null>(null);
+  const [date, setDate] = useState<Date | null>(null);
+  const [start_time, setStartTime] = useState<Date | null>(null);
+  const [end_time, setEndTime] = useState<Date | null>(null);
+  const [fee, setFee] = useState<number | null>(null); // nullable
 
   const resetReservation = () => {
+    setUserId(null);
     setFacility(null);
     setDate(null);
     setStartTime(null);
     setEndTime(null);
+    setFee(null); // reset fee too
   };
 
   return (
     <ReservationContext.Provider
       value={{
+         user_id,
         facility,
         date,
         start_time,
         end_time,
+        fee,
         setFacility,
         setDate,
         setStartTime,
         setEndTime,
+        setFee,
         resetReservation,
       }}
     >
