@@ -1,17 +1,12 @@
-import { 
-  StyleSheet, 
-  SafeAreaView, 
-  View, 
-  Button, 
-  Alert,
-  ActivityIndicator 
-} from 'react-native';
 import FormTextFields from '@/components/FormTextFields';
-import { useState } from 'react';
-import api from '@/utils/api';
+import LoadingModal from '@/components/LoadingModal';
 import { useAuth } from '@/contexts/AuthContext';
+import api from '@/utils/api';
 import { saveToken } from '@/utils/TokenStorage';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { SafeAreaView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Button, Dialog, Portal, Text } from 'react-native-paper';
 
 const Registration = () => {
   const [firstName, setFirstName] = useState("");
@@ -21,24 +16,34 @@ const Registration = () => {
   const [confirmedPassword, setConfirmedPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const { setUser } = useAuth(); // make sure your AuthContext exposes this
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+
+  const { setUser } = useAuth();
   const router = useRouter();
+
+  const showDialog = (message: string) => {
+    setDialogMessage(message);
+    setDialogVisible(true);
+  };
+  const hideDialog = () => setDialogVisible(false);
 
   async function handleRegister() {
     if (!firstName || !lastName || !email || !password || !confirmedPassword) {
-      Alert.alert("Error", "Please fill in all fields");
+      showDialog("Please fill in all fields");
       return;
     }
     if (password !== confirmedPassword) {
-      Alert.alert("Error", "Passwords don't match");
+      showDialog("Passwords don't match");
       return;
     }
     if (password.length < 8) {
-      Alert.alert("Error", "Password must be at least 8 characters");
+      showDialog("Password must be at least 8 characters");
       return;
     }
 
     setIsLoading(true);
+    showDialog("Creating your account...");
 
     try {
       const response = await api.post('/register', {
@@ -50,20 +55,16 @@ const Registration = () => {
       });
 
       const { user, token } = response.data;
-      if (__DEV__) {
-        console.log(response.data);
-      }
+      if (__DEV__) console.log(response.data);
 
       // Save token & update context
       await saveToken(token);
       setUser(user);
 
-      // Redirect to home
-      router.replace('/home');
-
+      // Update dialog message
+      setDialogMessage("Registration successful!");
     } catch (error: any) {
-      Alert.alert(
-        "Error", 
+      setDialogMessage(
         error.response?.data?.message || 
         error.message || 
         "Registration failed"
@@ -74,59 +75,49 @@ const Registration = () => {
     }
   }
 
+  const handleDialogOk = () => {
+    hideDialog();
+    if (dialogMessage === "Registration successful!") {
+      router.replace('/home');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.formContainer}>
-        <FormTextFields 
-          label='First Name:'
-          value={firstName}
-          onChangeText={setFirstName}
-          autoCapitalize='words'
-          placeholder="Enter your first name"
-          editable={!isLoading}
-        />
-        <FormTextFields 
-          label='Last Name:'
-          value={lastName}
-          onChangeText={setLastName}
-          autoCapitalize='words'
-          placeholder="Enter your last name"
-          editable={!isLoading}
-        />
-        <FormTextFields 
-          label='Email:'
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize='none'
-          keyboardType='email-address'
-          placeholder="Enter your email"
-          editable={!isLoading}
-        />
-        <FormTextFields 
-          label="Password:"
-          value={password}
-          onChangeText={setPassword}
-          autoCapitalize='none'
-          secureTextEntry
-          placeholder="At least 8 characters"
-          editable={!isLoading}
-        />
-        <FormTextFields 
-          label="Confirm Password:"
-          value={confirmedPassword}
-          onChangeText={setConfirmedPassword}
-          autoCapitalize='none'
-          secureTextEntry
-          placeholder="Re-enter your password"
-          editable={!isLoading}
-        />
+        <Text variant="headlineSmall" style={styles.header}>
+          Create an Account
+        </Text>
 
-        {isLoading ? (
-          <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
-        ) : (
-          <Button title="Register" onPress={handleRegister} />
-        )}
+        <FormTextFields label='First Name:' value={firstName} onChangeText={setFirstName} autoCapitalize='words' placeholder="Enter your first name" editable={!isLoading} />
+        <FormTextFields label='Last Name:' value={lastName} onChangeText={setLastName} autoCapitalize='words' placeholder="Enter your last name" editable={!isLoading} />
+        <FormTextFields label='Email:' value={email} onChangeText={setEmail} autoCapitalize='none' keyboardType='email-address' placeholder="Enter your email" editable={!isLoading} />
+        <FormTextFields label="Password:" value={password} onChangeText={setPassword} autoCapitalize='none' secureTextEntry placeholder="At least 8 characters" editable={!isLoading} />
+        <FormTextFields label="Confirm Password:" value={confirmedPassword} onChangeText={setConfirmedPassword} autoCapitalize='none' secureTextEntry placeholder="Re-enter your password" editable={!isLoading} />
+
+        <Button mode="contained" onPress={handleRegister} disabled={isLoading} style={styles.button}>
+          Register
+        </Button>
       </View>
+
+      {/* Loading modal */}
+      <LoadingModal visible={isLoading} message="Creating your account..." />
+
+      {/* Dialog for messages */}
+      <Portal>
+        <Dialog visible={dialogVisible} onDismiss={hideDialog}>
+          <Dialog.Title>Notice</Dialog.Title>
+          <Dialog.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            {isLoading && <ActivityIndicator />}
+            <Text>{dialogMessage}</Text>
+          </Dialog.Content>
+          {!isLoading && (
+            <Dialog.Actions>
+              <Button onPress={handleDialogOk}>OK</Button>
+            </Dialog.Actions>
+          )}
+        </Dialog>
+      </Portal>
     </SafeAreaView>
   );
 };
@@ -134,15 +125,8 @@ const Registration = () => {
 export default Registration;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  formContainer: {
-    padding: 20,
-  },
-  loader: {
-    marginTop: 20,
-    alignSelf: 'center',
-  }
+  container: { flex: 1, backgroundColor: '#fff' },
+  formContainer: { padding: 20, gap: 16 },
+  header: { marginVertical: 16, fontWeight: 'bold' },
+  button: { marginTop: 16 },
 });

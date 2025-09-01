@@ -1,11 +1,14 @@
 import { useReservation } from "@/contexts/ReservationContext";
 import { useRouter } from "expo-router";
-import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { Button, Card, TouchableRipple, useTheme } from "react-native-paper";
 
 export default function Facility() {
   const router = useRouter();
   const { facility, setFacility } = useReservation();
+  const [selected, setSelected] = useState<string | null>(facility);
+  const theme = useTheme();
 
   const options = [
     "Basketball Court 1",
@@ -14,36 +17,51 @@ export default function Facility() {
     "Event Place",
   ];
 
-  const handleSelect = (option: string) => {
-    setFacility(option);
-    router.replace("./date");
+  const handleNext = () => {
+    if (selected) {
+      setFacility(selected);
+      router.replace("./date");
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Select a Facility</Text>
+      <Text style={[styles.header, { color: theme.colors.onBackground }]}>
+        Select a Facility
+      </Text>
       <View style={styles.grid}>
-        {options.map((option) => (
-          <Pressable
-            key={option}
-            onPress={() => handleSelect(option)}
-            style={({ pressed }) => [
-              styles.card,
-              facility === option && styles.selectedCard,
-              pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] },
-            ]}
-          >
-            <Text
-              style={[
-                styles.cardText,
-                facility === option && styles.selectedText,
-              ]}
+        {options.map((option) => {
+          const isSelected = selected === option;
+          return (
+            <Card
+              key={option}
+              style={[styles.card, isSelected && { backgroundColor: theme.colors.primary }]}
             >
-              {option}
-            </Text>
-          </Pressable>
-        ))}
+              <TouchableRipple
+                onPress={() => setSelected(option)}
+                rippleColor="rgba(0, 0, 0, 0.1)"
+                borderless
+                style={styles.touchable}
+              >
+                <Text style={[styles.cardText, isSelected && { color: "#fff", fontWeight: "600" }]}>
+                  {option}
+                </Text>
+              </TouchableRipple>
+            </Card>
+          );
+        })}
       </View>
+
+      {selected && (
+        <View style={styles.nextContainer}>
+          <Text style={[styles.selectedText, { color: theme.colors.onBackground }]}>
+            Selected: {selected}
+          </Text>
+          <Button mode="contained" onPress={handleNext}>
+            Next
+          </Button>
+        </View>
+      )}
     </View>
   );
 }
@@ -60,7 +78,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
-    color: "#111827",
   },
   grid: {
     flexDirection: "row",
@@ -69,20 +86,14 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "48%",
-    padding: 20,
     marginVertical: 8,
-    backgroundColor: "#fff",
     borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
     elevation: 4,
   },
-  selectedCard: {
-    backgroundColor: "#3b82f6",
+  touchable: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
   cardText: {
     fontSize: 16,
@@ -90,8 +101,13 @@ const styles = StyleSheet.create({
     color: "#111827",
     textAlign: "center",
   },
+  nextContainer: {
+    marginTop: 24,
+    alignItems: "center",
+    gap: 12,
+  },
   selectedText: {
-    color: "#fff",
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "500",
   },
 });

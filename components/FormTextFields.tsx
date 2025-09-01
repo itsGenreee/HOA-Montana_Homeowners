@@ -1,5 +1,6 @@
-import { View, Text, TextInput, TextInputProps } from 'react-native';
 import React from 'react';
+import { View } from 'react-native';
+import { TextInput, TextInputProps } from 'react-native-paper';
 
 interface FormTextFieldProps extends TextInputProps {
   label?: string;
@@ -7,17 +8,13 @@ interface FormTextFieldProps extends TextInputProps {
 
 const FormTextFields: React.FC<FormTextFieldProps> = ({ label, ...rest }) => {
   return (
-    <View>
-      {label && <Text style={{ marginTop: 5 }}>{label}</Text>}
-      <TextInput 
-        style={{       
-          marginVertical: 5,
-          borderWidth: 1,
-          borderColor: "black",
-          borderRadius: 6 
-        }}
+    <View style={{ marginVertical: 5 }}>
+      <TextInput
+        label={label} // Paper handles labels automatically
+        mode="outlined" // Gives a nice outlined style
         autoCapitalize="none"
-        {...rest}  // Spread all TextInput props
+        style={{ marginVertical: 5 }}
+        {...rest}
       />
     </View>
   );

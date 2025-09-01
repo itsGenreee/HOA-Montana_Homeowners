@@ -1,39 +1,35 @@
-import { StyleSheet, View, Text, Modal, ActivityIndicator } from "react-native";
+import React from 'react';
+import { ActivityIndicator, Modal, Portal, Text } from 'react-native-paper';
 
-type LoadingModalProps = {
+interface LoadingModalProps {
   visible: boolean;
   message?: string;
-};
-
-export default function LoadingModal({ visible, message }: LoadingModalProps) {
-  return (
-    <Modal transparent={true} visible={visible} animationType="fade">
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <ActivityIndicator size="large" color="#fff" />
-          {message && <Text style={styles.message}>{message}</Text>}
-        </View>
-      </View>
-    </Modal>
-  );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  container: {
-    padding: 20,
-    backgroundColor: "#333",
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  message: {
-    marginTop: 10,
-    color: "#fff",
-    fontSize: 16,
-  },
-});
+const LoadingModal: React.FC<LoadingModalProps> = ({ visible, message }) => {
+  return (
+    <Portal>
+      <Modal
+        visible={visible}
+        dismissable={false}
+        contentContainerStyle={{
+          backgroundColor: 'white',
+          padding: 20,
+          borderRadius: 12,
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: 20,
+        }}
+      >
+        <ActivityIndicator animating={true} size="large" />
+        {message && (
+          <Text style={{ marginTop: 10, textAlign: 'center' }}>
+            {message}
+          </Text>
+        )}
+      </Modal>
+    </Portal>
+  );
+};
+
+export default LoadingModal;

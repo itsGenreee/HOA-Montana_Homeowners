@@ -1,15 +1,30 @@
+import LoadingModal from '@/components/LoadingModal'; // <- Import your LoadingModal
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { SafeAreaView, StyleSheet } from 'react-native';
+import { Avatar, Button, Card, Divider, Text, useTheme } from 'react-native-paper';
 
 const Profile = () => {
-  const router = useRouter();
   const { user, logout } = useAuth();
+  const router = useRouter();
+  const theme = useTheme();
+  const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
 
   const handleLogout = async () => {
-    await logout();
-    router.replace('/');
+    setLoading(true); // show loading modal
+    setLoadingMessage("Logging out...");
+
+    try {
+      await logout();
+      router.replace('/');
+    } catch (error) {
+      console.error("Logout failed:", error);
+      setLoadingMessage("Logout failed");
+      setTimeout(() => setLoading(false), 1500); // hide after showing message briefly
+      return;
+    }
   };
 
   const getStatusText = () => {
@@ -19,24 +34,43 @@ const Profile = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Profile</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Card style={styles.card}>
+        <Card.Content style={{ alignItems: 'center' }}>
+          <Avatar.Text
+            size={100}
+            label={`${user?.first_name?.[0] ?? ''}${user?.last_name?.[0] ?? ''}`}
+            style={{ backgroundColor: theme.colors.primary, marginBottom: 16 }}
+          />
 
-      <View style={styles.card}>
-        <Text style={styles.name}>{user?.first_name} {user?.last_name}</Text>
-        <Text style={styles.email}>Email: {user?.email}</Text>
-        <Text style={styles.status}>Account Status: {getStatusText()}</Text>
+          <Text variant="titleLarge" style={{ color: theme.colors.onBackground, marginBottom: 4 }}>
+            {user?.first_name} {user?.last_name}
+          </Text>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.logoutButton,
-            pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] },
-          ]}
-          onPress={handleLogout}
-        >
-          <Text style={styles.logoutText}>Logout</Text>
-        </Pressable>
-      </View>
+          <Text variant="bodyMedium" style={{ color: theme.colors.outline, marginBottom: 8 }}>
+            {user?.email}
+          </Text>
+
+          <Divider style={{ width: '60%', marginVertical: 12, backgroundColor: theme.colors.outline }} />
+
+          <Text variant="bodyMedium" style={{ color: theme.colors.outline, fontWeight: '500' }}>
+            Account Status: {getStatusText()}
+          </Text>
+
+          <Button
+            mode="contained"
+            onPress={handleLogout}
+            buttonColor={theme.colors.error}
+            textColor={theme.colors.onError}
+            style={{ marginTop: 24, width: '80%', borderRadius: 12, paddingVertical: 8 }}
+          >
+            Logout
+          </Button>
+        </Card.Content>
+      </Card>
+
+      {/* Loading modal for logout */}
+      <LoadingModal visible={loading} message={loadingMessage} />
     </SafeAreaView>
   );
 };
@@ -46,55 +80,12 @@ export default Profile;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f3f4f6',
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#111827',
+    padding: 20,
   },
   card: {
-    width: '100%',
-    backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4, // for Android
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#111827',
-  },
-  email: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: '#4b5563',
-  },
-  status: {
-    fontSize: 16,
-    marginBottom: 20,
-    fontWeight: '500',
-    color: '#6b7280',
-  },
-  logoutButton: {
-    backgroundColor: '#ef4444',
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-  },
-  logoutText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    elevation: 4,
+    paddingVertical: 20,
   },
 });

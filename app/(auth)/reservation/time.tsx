@@ -1,16 +1,19 @@
 import { useReservation } from "@/contexts/ReservationContext";
 import { useRouter } from "expo-router";
-import React from "react";
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import { FlatList, StyleSheet, Text, View } from "react-native";
+import { Button, Card, useTheme } from "react-native-paper";
 
 export default function Time() {
   const router = useRouter();
   const { setStartTime, setEndTime } = useReservation();
+  const theme = useTheme();
+  const [selectedSlot, setSelectedSlot] = useState<any>(null);
 
-  // Generate slots dynamically (8 AM - 8 PM)
+  // Generate slots dynamically (1 PM - 8 PM)
   const generateTimeSlots = () => {
     const slots = [];
-    for (let hour = 13; hour < 21; hour++) { // 1 PM (13) to 8 PM (20)
+    for (let hour = 13; hour < 21; hour++) {
       const start = new Date();
       start.setHours(hour, 0, 0, 0);
       const end = new Date();
@@ -30,24 +33,54 @@ export default function Time() {
 
   const timeSlots = generateTimeSlots();
 
-  const handleSelect = (slot: any) => {
-    setStartTime(slot.start);
-    setEndTime(slot.end);
-    router.replace("./summary");
+  const handleNext = () => {
+    if (selectedSlot) {
+      setStartTime(selectedSlot.start);
+      setEndTime(selectedSlot.end);
+      router.replace("./summary");
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Select a Time</Text>
+      <Text style={[styles.title, { color: theme.colors.onBackground }]}>Select a Time</Text>
+
       <FlatList
         data={timeSlots}
         keyExtractor={(_, index) => index.toString()}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.slot} onPress={() => handleSelect(item)}>
-            <Text style={styles.slotText}>{item.label}</Text>
-          </TouchableOpacity>
+          <Card
+            style={[
+              styles.card,
+              { backgroundColor: selectedSlot === item ? theme.colors.primary : theme.colors.surface },
+            ]}
+            onPress={() => setSelectedSlot(item)}
+          >
+            <Card.Content>
+              <Text
+                style={[
+                  styles.slotText,
+                  { color: selectedSlot === item ? "#fff" : theme.colors.onSurface },
+                ]}
+              >
+                {item.label}
+              </Text>
+            </Card.Content>
+          </Card>
         )}
+        contentContainerStyle={{ paddingBottom: 20 }}
       />
+
+      {selectedSlot && (
+        <View style={styles.nextContainer}>
+          <Text style={[styles.selectedText, { color: theme.colors.onBackground }]}>
+            Selected: {selectedSlot.label}
+          </Text>
+          <Button mode="contained" onPress={handleNext}>
+            Next
+          </Button>
+        </View>
+      )}
     </View>
   );
 }
@@ -55,13 +88,21 @@ export default function Time() {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
   title: { fontSize: 20, marginVertical: 20, fontWeight: "bold" },
-  slot: {
-    padding: 16,
+  card: {
     marginVertical: 6,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
+    borderRadius: 12,
     width: 250,
-    alignItems: "center",
+    alignSelf: "center",
+    elevation: 2,
   },
-  slotText: { fontSize: 16 },
+  slotText: { fontSize: 16, textAlign: "center" },
+  nextContainer: {
+    marginTop: 20,
+    alignItems: "center",
+    gap: 12,
+  },
+  selectedText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
 });

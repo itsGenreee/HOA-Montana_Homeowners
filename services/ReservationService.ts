@@ -34,7 +34,7 @@ export const useReservationService = () => {
       fee: reservation.fee ?? null,
     };
 
-    const response = await api.post("/reservation", reservationData);
+    const response = await api.post("/reservations/store", reservationData);
 
     if (__DEV__) console.log("Reservation created:", response.data);
 

@@ -1,37 +1,43 @@
-import LoadingModal from "@/components/LoadingModal"; // Import your loading modal
 import { useAuth } from "@/contexts/AuthContext";
 import { useReservation } from "@/contexts/ReservationContext";
 import { useReservationService } from "@/services/ReservationService";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
-import { useState } from "react";
-import { Alert, Button, SafeAreaView, StyleSheet, Text } from "react-native";
+import React, { useState } from "react";
+import { SafeAreaView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Button, Dialog, Divider, Portal, Text } from "react-native-paper";
 
 export default function Summary() {
   const reservationService = useReservationService();
   const { facility, date, start_time, end_time, resetReservation } = useReservation();
   const { user } = useAuth();
   const router = useRouter();
+
   const [loading, setLoading] = useState(false);
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
 
-  const formatDate = (d: Date | null) =>
-    d
-      ? dayjs(d).format("MMMM D, YYYY") // Example: June 1, 2003
-      : "N/A";
+  const formatDate = (d: Date | null) => (d ? dayjs(d).format("MMMM D, YYYY") : "N/A");
+  const formatTime = (d: Date | null) => (d ? dayjs(d).format("h:mm A") : "N/A");
 
-  const formatTime = (d: Date | null) =>
-    d ? dayjs(d).format("h:mm A") : "N/A"; // Example: 1:00 PM
+  const showDialog = (message: string) => {
+    setDialogMessage(message);
+    setDialogVisible(true);
+  };
+  const hideDialog = () => setDialogVisible(false);
 
-  const handleConfirm = async () => {
+  const handleReservation = async () => {
     if (!user || !facility || !date || !start_time || !end_time) {
-      Alert.alert("Error", "Missing reservation details!");
+      showDialog("Missing reservation details!");
       return;
     }
 
+    // Show loading dialog immediately
     setLoading(true);
+    showDialog("Processing reservation...");
 
     try {
-      const reservation = await reservationService.create({
+      await reservationService.create({
         user_id: user.id,
         facility,
         date,
@@ -40,52 +46,88 @@ export default function Summary() {
         fee: null,
       });
 
-      if (__DEV__) {
-        console.log("Reservation Details:", reservation);
-      }
-
-      Alert.alert("Success", "Reservation Confirmed!");
-
       resetReservation();
-      router.replace("/home"); // Navigate back to home or reservations list
+      setDialogMessage("Reservation Confirmed!");
     } catch (error) {
       console.error("Reservation creation failed:", error);
-      Alert.alert("Error", "Failed to create reservation.");
+      setDialogMessage("Failed to create reservation.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDialogOk = () => {
+    hideDialog();
+    // Redirect only if reservation succeeded
+    if (dialogMessage === "Reservation Confirmed!") {
+      router.replace('/reservation')
+      router.replace("/(auth)/home");
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      <Text>Name: {user?.first_name} {user?.last_name}</Text>
-      <Text style={styles.title}>Reservation Summary</Text>
-      <Text>Facility: {facility}</Text>
-      <Text>Date: {formatDate(date)}</Text>
-      <Text>Time: {formatTime(start_time)} - {formatTime(end_time)}</Text>
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        <Text variant="titleLarge" style={styles.title}>Reservation Summary</Text>
 
-      <Button
-        title="Confirm"
-        onPress={handleConfirm}
-        disabled={loading}
-      />
+        <View style={styles.content}>
+          <View style={styles.row}>
+            <Text variant="titleMedium">Name:</Text>
+            <Text>{user?.first_name} {user?.last_name}</Text>
+          </View>
+          <Divider style={styles.divider} />
 
-      {/* Show loading modal when loading */}
-      <LoadingModal visible={loading} message="Processing reservation..." />
+          <View style={styles.row}>
+            <Text variant="titleMedium">Facility:</Text>
+            <Text>{facility}</Text>
+          </View>
+          <Divider style={styles.divider} />
+
+          <View style={styles.row}>
+            <Text variant="titleMedium">Date:</Text>
+            <Text>{formatDate(date)}</Text>
+          </View>
+          <Divider style={styles.divider} />
+
+          <View style={styles.row}>
+            <Text variant="titleMedium">Time:</Text>
+            <Text>{formatTime(start_time)} - {formatTime(end_time)}</Text>
+          </View>
+          <Divider style={styles.divider} />
+
+          <Button
+            mode="contained"
+            onPress={handleReservation}
+            style={styles.button}
+            contentStyle={{ paddingVertical: 8 }}
+          >
+            Confirm
+          </Button>
+        </View>
+
+        <Portal>
+          <Dialog visible={dialogVisible} onDismiss={hideDialog}>
+            <Dialog.Title>Notice</Dialog.Title>
+            <Dialog.Content style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              {loading && <ActivityIndicator />}
+              <Text>{dialogMessage}</Text>
+            </Dialog.Content>
+            <Dialog.Actions>
+              {!loading && <Button onPress={handleDialogOk}>OK</Button>}
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  title: {
-    fontSize: 20,
-    marginVertical: 16,
-    fontWeight: "bold",
-  },
+  safe: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 20 },
+  title: { fontWeight: "bold", marginBottom: 20, textAlign: "center" },
+  content: { width: "100%", maxWidth: 400, gap: 16 },
+  row: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 },
+  divider: { backgroundColor: "#ccc" },
+  button: { marginTop: 20 },
 });
