@@ -1,9 +1,11 @@
+import { useAuth } from "@/contexts/AuthContext"; // <- Get user info
 import { useReservationService } from "@/services/ReservationService";
+import { ReservationQRCode } from "@/utils/QrCodeGenerator";
 import dayjs from "dayjs";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet } from "react-native";
-import { Card, Chip, Text } from "react-native-paper";
+import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
+import { Button, Card, Chip, Modal, Portal, Text } from "react-native-paper";
 
 type Reservation = {
   id: number;
@@ -12,11 +14,16 @@ type Reservation = {
   start_time: string;
   end_time: string;
   status: string;
+  reservation_token: string;
+  digital_signature: string;
 };
 
 export default function Home() {
   const { getUserReservations } = useReservationService();
+  const { user } = useAuth(); // Get authenticated user info
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+  const [visible, setVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -28,10 +35,21 @@ export default function Home() {
           console.error("Failed to fetch reservations:", error);
         }
       };
-
       fetchReservations();
     }, [getUserReservations])
   );
+
+  const openQrModal = (reservation: Reservation) => {
+    if (reservation.status === "confirmed") {
+      setSelectedReservation(reservation);
+      setVisible(true);
+    }
+  };
+
+  const closeQrModal = () => {
+    setVisible(false);
+    setSelectedReservation(null);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -42,11 +60,10 @@ export default function Home() {
         {reservations.map((item) => {
           const start = dayjs(`${item.date.split("T")[0]}T${item.start_time}`);
           const end = dayjs(`${item.date.split("T")[0]}T${item.end_time}`);
-
           const isPending = item.status === "pending";
 
           return (
-            <Card key={item.id} style={styles.card}>
+            <Card key={item.id} style={styles.card} onPress={() => openQrModal(item)}>
               <Card.Content>
                 <Text variant="titleMedium" style={styles.date}>
                   {start.format("MMMM D, YYYY")}
@@ -58,10 +75,7 @@ export default function Home() {
                   {item.facility}
                 </Text>
                 <Chip
-                  style={[
-                    styles.statusChip,
-                    isPending ? styles.pending : styles.confirmed,
-                  ]}
+                  style={[styles.statusChip, isPending ? styles.pending : styles.confirmed]}
                   textStyle={isPending ? styles.pendingText : styles.confirmedText}
                   compact
                 >
@@ -72,6 +86,35 @@ export default function Home() {
           );
         })}
       </ScrollView>
+
+      {/* QR Code Modal */}
+      <Portal>
+        <Modal visible={visible} onDismiss={closeQrModal} contentContainerStyle={styles.modal}>
+          {selectedReservation && (
+            <View style={{ alignItems: "center" }}>
+              <Text variant="titleMedium" style={{ marginBottom: 16 }}>
+                Reservation QR Code
+              </Text>
+              <ReservationQRCode
+                reservation={{
+                  id: selectedReservation.id,
+                  user_name: user?.first_name + " " + user?.last_name, // Use Auth context
+                  facility: selectedReservation.facility,
+                  date: selectedReservation.date,
+                  start_time: selectedReservation.start_time,
+                  end_time: selectedReservation.end_time,
+                  reservation_token: selectedReservation.reservation_token,
+                  digital_signature: selectedReservation.digital_signature,
+                }}
+                size={250}
+              />
+              <Button mode="contained" onPress={closeQrModal} style={{ marginTop: 16 }}>
+                Close
+              </Button>
+            </View>
+          )}
+        </Modal>
+      </Portal>
     </SafeAreaView>
   );
 }
@@ -89,4 +132,11 @@ const styles = StyleSheet.create({
   pendingText: { color: "#AA6C39", fontWeight: "bold" },
   confirmed: { backgroundColor: "#D4EDDA" },
   confirmedText: { color: "#155724", fontWeight: "bold" },
+  modal: {
+    backgroundColor: "white",
+    padding: 20,
+    margin: 20,
+    borderRadius: 12,
+    alignItems: "center",
+  },
 });
