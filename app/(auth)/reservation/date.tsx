@@ -6,7 +6,7 @@ import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { Button, useTheme } from 'react-native-paper';
 
-export default function DatePickerScreen() {
+export default function Date() {
   const { setDate } = useReservation();
   const router = useRouter();
   const theme = useTheme();

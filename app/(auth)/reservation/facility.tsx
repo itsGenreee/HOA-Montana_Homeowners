@@ -6,20 +6,20 @@ import { Button, Card, TouchableRipple, useTheme } from "react-native-paper";
 
 export default function Facility() {
   const router = useRouter();
-  const { facility, setFacility } = useReservation();
-  const [selected, setSelected] = useState<string | null>(facility);
+  const { facility_id, setFacilityId } = useReservation(); // ✅ use facility_id now
+  const [selected, setSelected] = useState<number | null>(facility_id);
   const theme = useTheme();
 
+  // Map facilities by id
   const options = [
-    "Basketball Court 1",
-    "Basketball Court 2",
-    "Tennis Court",
-    "Event Place",
+    { id: 1, name: "Tennis Court" },
+    { id: 2, name: "Basketball Court" },
+    { id: 3, name: "Event Place" },
   ];
 
   const handleNext = () => {
-    if (selected) {
-      setFacility(selected);
+    if (selected !== null) {
+      setFacilityId(selected); // ✅ save id in context
       router.replace("./date");
     }
   };
@@ -31,20 +31,28 @@ export default function Facility() {
       </Text>
       <View style={styles.grid}>
         {options.map((option) => {
-          const isSelected = selected === option;
+          const isSelected = selected === option.id;
           return (
             <Card
-              key={option}
-              style={[styles.card, isSelected && { backgroundColor: theme.colors.primary }]}
+              key={option.id}
+              style={[
+                styles.card,
+                isSelected && { backgroundColor: theme.colors.primary },
+              ]}
             >
               <TouchableRipple
-                onPress={() => setSelected(option)}
+                onPress={() => setSelected(option.id)}
                 rippleColor="rgba(0, 0, 0, 0.1)"
                 borderless
                 style={styles.touchable}
               >
-                <Text style={[styles.cardText, isSelected && { color: "#fff", fontWeight: "600" }]}>
-                  {option}
+                <Text
+                  style={[
+                    styles.cardText,
+                    isSelected && { color: "#fff", fontWeight: "600" },
+                  ]}
+                >
+                  {option.name}
                 </Text>
               </TouchableRipple>
             </Card>
@@ -52,10 +60,16 @@ export default function Facility() {
         })}
       </View>
 
-      {selected && (
+      {selected !== null && (
         <View style={styles.nextContainer}>
-          <Text style={[styles.selectedText, { color: theme.colors.onBackground }]}>
-            Selected: {selected}
+          <Text
+            style={[
+              styles.selectedText,
+              { color: theme.colors.onBackground },
+            ]}
+          >
+            Selected:{" "}
+            {options.find((o) => o.id === selected)?.name ?? "Unknown"}
           </Text>
           <Button mode="contained" onPress={handleNext}>
             Next

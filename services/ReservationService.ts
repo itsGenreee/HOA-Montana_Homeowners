@@ -17,7 +17,7 @@ export const useReservationService = () => {
 
   const create = async (reservation: {
     user_id: number;
-    facility: string;
+    facility_id: number;
     date: Date;
     start_time: Date;
     end_time: Date;
@@ -27,7 +27,7 @@ export const useReservationService = () => {
 
     const reservationData = {
       user_id: user.id, // Automatically bind current user
-      facility: reservation.facility,
+      facility_id: reservation.facility_id,
       date: dayjs(reservation.date).format("YYYY-MM-DD"),
       start_time: dayjs(reservation.start_time).format("HH:mm"),
       end_time: dayjs(reservation.end_time).format("HH:mm"),

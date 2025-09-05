@@ -2,12 +2,12 @@ import React, { createContext, ReactNode, useContext, useState } from "react";
 
 type ReservationContextType = {
   user_id: number | null;
-  facility: string | null;
+  facility_id: number | null;
   date: Date | null;
   start_time: Date | null;
   end_time: Date | null;
   fee: number | null;  // nullable fee
-  setFacility: React.Dispatch<React.SetStateAction<string | null>>;
+  setFacilityId: React.Dispatch<React.SetStateAction<number | null>>;
   setDate: React.Dispatch<React.SetStateAction<Date | null>>;
   setStartTime: React.Dispatch<React.SetStateAction<Date | null>>;
   setEndTime: React.Dispatch<React.SetStateAction<Date | null>>;
@@ -21,7 +21,7 @@ const ReservationContext = createContext<ReservationContextType | undefined>(
 
 export const ReservationProvider = ({ children }: { children: ReactNode }) => {
   const [user_id, setUserId] = useState<number | null>(null);
-  const [facility, setFacility] = useState<string | null>(null);
+  const [facility_id, setFacilityId] = useState<number | null>(null);
   const [date, setDate] = useState<Date | null>(null);
   const [start_time, setStartTime] = useState<Date | null>(null);
   const [end_time, setEndTime] = useState<Date | null>(null);
@@ -29,7 +29,7 @@ export const ReservationProvider = ({ children }: { children: ReactNode }) => {
 
   const resetReservation = () => {
     setUserId(null);
-    setFacility(null);
+    setFacilityId(null);
     setDate(null);
     setStartTime(null);
     setEndTime(null);
@@ -39,13 +39,13 @@ export const ReservationProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ReservationContext.Provider
       value={{
-         user_id,
-        facility,
+        user_id,
+        facility_id,
         date,
         start_time,
         end_time,
         fee,
-        setFacility,
+        setFacilityId,
         setDate,
         setStartTime,
         setEndTime,
