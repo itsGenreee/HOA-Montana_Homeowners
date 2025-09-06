@@ -1,6 +1,5 @@
 import { useReservation } from "@/contexts/ReservationContext";
-import AvailabilityService from "@/services/AvailabilityService"; // default import (see fix below)
-import dayjs from "dayjs";
+import AvailabilityService from "@/services/AvailabilityService";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { FlatList, SafeAreaView, StyleSheet, Text, View } from "react-native";
@@ -19,7 +18,46 @@ export default function Time() {
       if (facility_id && date) {
         try {
           const data = await AvailabilityService.getAvailability(facility_id, date);
-          setSlots(data);
+          
+          // Process the slots - parse 12-hour format with AM/PM
+          const processed = data.map((slot: any) => {
+            // Create a base date from the selected date
+            const baseDate = new Date(date);
+            
+            // Parse 12-hour format with AM/PM (e.g., "1:00 PM")
+            const parse12HourTime = (timeStr: string) => {
+              const [time, period] = timeStr.split(' ');
+              const [hours, minutes] = time.split(':').map(Number);
+              
+              let hours24 = hours;
+              if (period === 'PM' && hours !== 12) {
+                hours24 = hours + 12;
+              } else if (period === 'AM' && hours === 12) {
+                hours24 = 0;
+              }
+              
+              return { hours: hours24, minutes };
+            };
+            
+            const startTime = parse12HourTime(slot.start_time);
+            const endTime = parse12HourTime(slot.end_time);
+            
+            // Create Date objects with the correct date and time
+            const start = new Date(baseDate);
+            start.setHours(startTime.hours, startTime.minutes, 0, 0);
+            
+            const end = new Date(baseDate);
+            end.setHours(endTime.hours, endTime.minutes, 0, 0);
+            
+            return {
+              ...slot,
+              start, // Full Date object with correct date and time
+              end,   // Full Date object with correct date and time
+              label: `${slot.start_time} - ${slot.end_time}`,
+            };
+          });
+
+          setSlots(processed);
         } catch (error) {
           console.error("Failed to fetch availability:", error);
         }
@@ -31,13 +69,12 @@ export default function Time() {
 
   const handleNext = () => {
     if (selected) {
-      // Save chosen slot into ReservationContext
-      const today = dayjs(date).format("YYYY-MM-DD");
-      setStartTime(dayjs(`${today} ${selected.start_time}`).toDate());
-      setEndTime(dayjs(`${today} ${selected.end_time}`).toDate());
+      // Store the actual Date objects
+      setStartTime(selected.start);
+      setEndTime(selected.end);
       setFee(selected.fee);
-
-      router.replace("./confirm"); // go to confirmation page
+      
+      router.replace("./summary");
     }
   };
 
@@ -47,31 +84,36 @@ export default function Time() {
       <Card
         style={[
           styles.card,
-          isSelected && { backgroundColor: theme.colors.primary },
+          { backgroundColor: isSelected ? theme.colors.primary : theme.colors.surface },
           !item.available && { backgroundColor: "#e5e7eb" },
         ]}
         onPress={() => item.available && setSelected(item)}
+        disabled={!item.available}
       >
         <View style={styles.cardContent}>
           <Text
             style={[
               styles.cardText,
-              isSelected && { color: "#fff", fontWeight: "600" },
+              { color: isSelected ? "#fff" : theme.colors.onSurface },
               !item.available && { color: "#9ca3af" },
             ]}
           >
-            {item.start_time} - {item.end_time}
+            {item.label}
           </Text>
-          <Text
-            style={[
-              styles.feeText,
-              isSelected && { color: "#fff" },
-              !item.available && { color: "#9ca3af" },
-            ]}
-          >
-            ₱{item.fee}
-          </Text>
-          {!item.available && <Text style={{ color: "red" }}>Reserved</Text>}
+
+          {/* Show fee only if slot is available */}
+          {item.available ? (
+            <Text
+              style={[
+                styles.feeText,
+                { color: isSelected ? "#fff" : theme.colors.onSurface },
+              ]}
+            >
+              ₱{item.fee}
+            </Text>
+          ) : (
+            <Text style={{ color: "red" }}>Reserved</Text>
+          )}
         </View>
       </Card>
     );
@@ -85,7 +127,7 @@ export default function Time() {
 
       <FlatList
         data={slots}
-        keyExtractor={(_, index) => index.toString()}
+        keyExtractor={(item, index) => item.id || `${item.start_time}-${index}`}
         renderItem={renderSlot}
         contentContainerStyle={styles.list}
       />
@@ -93,7 +135,10 @@ export default function Time() {
       {selected && (
         <View style={styles.nextContainer}>
           <Text style={[styles.selectedText, { color: theme.colors.onBackground }]}>
-            Selected: {selected.start_time} - {selected.end_time}
+            Selected: {selected.label}
+          </Text>
+          <Text style={[styles.selectedText, { color: theme.colors.onBackground }]}>
+            Fee: ₱{selected.fee}
           </Text>
           <Button mode="contained" onPress={handleNext}>
             Next
@@ -113,7 +158,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
   },
-  cardContent: { flexDirection: "row", justifyContent: "space-between" },
+  cardContent: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   cardText: { fontSize: 16, fontWeight: "500" },
   feeText: { fontSize: 14 },
   nextContainer: {

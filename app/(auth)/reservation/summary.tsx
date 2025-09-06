@@ -9,7 +9,7 @@ import { ActivityIndicator, Button, Dialog, Divider, Portal, Text } from "react-
 
 export default function Summary() {
   const reservationService = useReservationService();
-  const { facility, date, start_time, end_time, resetReservation } = useReservation();
+  const { facility_id, date, start_time, end_time, fee, resetReservation } = useReservation();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -27,7 +27,7 @@ export default function Summary() {
   const hideDialog = () => setDialogVisible(false);
 
   const handleReservation = async () => {
-    if (!user || !facility || !date || !start_time || !end_time) {
+    if (!user || !facility_id || !date || !start_time || !end_time) {
       showDialog("Missing reservation details!");
       return;
     }
@@ -39,11 +39,11 @@ export default function Summary() {
     try {
       await reservationService.create({
         user_id: user.id,
-        facility,
+        facility_id, // Use facility_id instead of facility
         date,
         start_time,
         end_time,
-        fee: null,
+        fee,
       });
 
       resetReservation();
@@ -78,8 +78,8 @@ export default function Summary() {
           <Divider style={styles.divider} />
 
           <View style={styles.row}>
-            <Text variant="titleMedium">Facility:</Text>
-            <Text>{facility}</Text>
+            <Text variant="titleMedium">Facility ID:</Text>
+            <Text>{facility_id}</Text>
           </View>
           <Divider style={styles.divider} />
 
@@ -92,6 +92,12 @@ export default function Summary() {
           <View style={styles.row}>
             <Text variant="titleMedium">Time:</Text>
             <Text>{formatTime(start_time)} - {formatTime(end_time)}</Text>
+          </View>
+          <Divider style={styles.divider} />
+
+          <View style={styles.row}>
+            <Text variant="titleMedium">Fee:</Text>
+            <Text>₱{fee || "N/A"}</Text>
           </View>
           <Divider style={styles.divider} />
 
