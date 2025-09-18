@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { ReservationProvider } from "@/contexts/ReservationContext";
 import Entypo from "@expo/vector-icons/Entypo";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
@@ -17,6 +18,7 @@ export default function AuthLayout() {
 
   return (
     <SafeAreaProvider>
+    <ReservationProvider>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -71,6 +73,7 @@ export default function AuthLayout() {
         }}
       />
     </Tabs>
+    </ReservationProvider>
     </SafeAreaProvider>
 
   );

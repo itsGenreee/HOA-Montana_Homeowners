@@ -6,7 +6,7 @@ import { FlatList, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { Button, Card, useTheme } from "react-native-paper";
 
 export default function Time() {
-  const { facility_id, date, setStartTime, setEndTime, setFee } = useReservation();
+  const { facility_id, date, setStartTime, setEndTime, setFacilityFee } = useReservation();
   const router = useRouter();
   const theme = useTheme();
 
@@ -72,7 +72,7 @@ export default function Time() {
       // Store the actual Date objects
       setStartTime(selected.start);
       setEndTime(selected.end);
-      setFee(selected.fee);
+      setFacilityFee(selected.fee);
       
       router.replace("./summary");
     }

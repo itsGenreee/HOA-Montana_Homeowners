@@ -6,6 +6,7 @@ const ReservationLayout = () => {
     <ReservationProvider>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index"/>
+          <Stack.Screen name="amenities"/>
           <Stack.Screen name="facility"/>
           <Stack.Screen name="date"/>
           <Stack.Screen name="time"/>

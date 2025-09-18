@@ -20,7 +20,14 @@ export default function Facility() {
   const handleNext = () => {
     if (selected !== null) {
       setFacilityId(selected); // ✅ save id in context
-      router.replace("./date");
+
+      if (selected === 3) {
+        // If Event Place is selected, go to amenities
+        router.replace("./amenities");
+      } else {
+        // Otherwise, go to date selection
+        router.replace("./date");
+      }
     }
   };
 

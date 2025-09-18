@@ -9,7 +9,9 @@ import { Button, Card, Chip, Modal, Portal, Text } from "react-native-paper";
 
 type Reservation = {
   id: number;
-  facility: string;
+  user_id: number;            // required for signature verification
+  facility: string;           // facility name (display)
+  facility_id: number;        // required for signature verification
   date: string;
   start_time: string;
   end_time: string;
@@ -17,6 +19,7 @@ type Reservation = {
   reservation_token: string;
   digital_signature: string;
 };
+
 
 export default function Home() {
   const { getUserReservations } = useReservationService();
@@ -65,15 +68,20 @@ export default function Home() {
           return (
             <Card key={item.id} style={styles.card} onPress={() => openQrModal(item)}>
               <Card.Content>
+                {/* Facility name */}
+                <Text variant="titleLarge" style={styles.facility}>
+                  {item.facility || "Unknown Facility"}
+                </Text>
+
+                {/* Date and Time */}
                 <Text variant="titleMedium" style={styles.date}>
                   {start.format("MMMM D, YYYY")}
                 </Text>
                 <Text variant="bodyMedium" style={styles.time}>
                   {start.format("h:mm A")} - {end.format("h:mm A")}
                 </Text>
-                <Text variant="bodyLarge" style={styles.facility}>
-                  {item.facility}
-                </Text>
+
+                {/* Status Chip */}
                 <Chip
                   style={[styles.statusChip, isPending ? styles.pending : styles.confirmed]}
                   textStyle={isPending ? styles.pendingText : styles.confirmedText}
@@ -98,16 +106,20 @@ export default function Home() {
               <ReservationQRCode
                 reservation={{
                   id: selectedReservation.id,
-                  user_name: user?.first_name + " " + user?.last_name, // Use Auth context
-                  facility: selectedReservation.facility,
+                  user_id: user?.id ?? 0, // must exist for signature (fallback 0 if missing)
+                  first_name: user?.first_name,
+                  last_name: user?.last_name,
+                  facility: selectedReservation.facility,        // display only
+                  facility_id: selectedReservation.facility_id,  // must exist for signature
                   date: selectedReservation.date,
                   start_time: selectedReservation.start_time,
                   end_time: selectedReservation.end_time,
                   reservation_token: selectedReservation.reservation_token,
                   digital_signature: selectedReservation.digital_signature,
                 }}
-                size={250}
+                size={300}
               />
+
               <Button mode="contained" onPress={closeQrModal} style={{ marginTop: 16 }}>
                 Close
               </Button>
