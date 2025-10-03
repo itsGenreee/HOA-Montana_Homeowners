@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AuthService } from '@/services/AuthService';
-import { retrieveToken, clearToken, saveToken } from '@/utils/TokenStorage';
 import { User } from '@/types';
+import { AuthSync } from '@/utils/authSync';
+import { clearToken, retrieveToken, saveToken } from '@/utils/TokenStorage';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type AuthContextType = {
   user: User | null;
@@ -16,7 +17,8 @@ type AuthContextType = {
     password: string;
     password_confirmation: string;
   }) => Promise<void>;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>; // Added this line
+  me: () => Promise<void>; // Add this
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
 };
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -26,42 +28,55 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing token on app startup
   useEffect(() => {
-    const loadAuthState = async () => {
+    AuthSync.init({ setUser, setToken });
+  }, []);
+
+    useEffect(() => {
+    const checkInitialAuth = async () => {
       try {
         const storedToken = await retrieveToken();
-        if (storedToken) {
-          try {
-            const response = await AuthService.me();
-            setUser(response.data.user);
-            setToken(storedToken);
-          } catch (error) {
-            console.error('Token validation failed:', error);
-            await clearToken();
-          }
+        if (!storedToken) {
+          // No token - ensure we're logged out and stop loading
+          setUser(null);
+          setToken(null);
         }
+        // If there's a token, the login page will call me() to validate it
       } catch (error) {
-        console.error('Auth state loading failed:', error);
-        await clearToken();
+        console.error('Initial auth check failed:', error);
       } finally {
+        // 🔥 CRITICAL: Always set loading to false
         setIsLoading(false);
       }
     };
 
-    loadAuthState();
-  }, []);
+    checkInitialAuth();
+  }, []); // Run once on mount
+
+  // Add the me function
+  const me = async () => {
+    try {
+      const response = await AuthService.me();
+      const storedToken = await retrieveToken();
+      
+      setUser(response.data.user);
+      setToken(storedToken);
+    } catch (error) {
+      console.error('Failed to fetch user data:', error);
+      throw error;
+    }
+  };
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
       const { user, token } = await AuthService.login(email, password);
       await saveToken(token);
-      setUser(user); // This sets the user in context
+      setUser(user);
       setToken(token);
     } catch (error) {
       console.error('Login failed:', error);
-      throw error; // Re-throw to handle in UI
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +117,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(false);
     }
   };
-
+  
   return (
     <AuthContext.Provider
       value={{
@@ -112,12 +127,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         login,
         logout,
         register,
-        setUser, // Expose setUser to consumers
+        me, // Add this to the context value
+        setUser,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
+
 
 export const useAuth = () => useContext(AuthContext);

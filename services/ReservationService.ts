@@ -46,7 +46,6 @@ export const useReservationService = () => {
     if (!user) throw new Error("User not logged in");
 
     const response = await api.get("/reservations");
-    if (__DEV__) console.log("Reservations:", response.data);
     return response.data;
   }, [user]);
 

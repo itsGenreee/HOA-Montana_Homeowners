@@ -1,7 +1,7 @@
 import axios from "axios";
-import { retrieveToken, saveToken, clearToken} from './TokenStorage'
+import { clearToken, retrieveToken, saveToken } from './TokenStorage';
 
-const BASE_URL = 'http://192.168.68.102:8000/api';
+const BASE_URL = 'http://192.168.68.116:8000/api';
 
 const api = axios.create({
     baseURL: BASE_URL,
@@ -10,7 +10,7 @@ const api = axios.create({
         'Accept': 'application/json',
         'Content-Type': 'application/json'
     }
-    
+     
 });
 
 // Add token to requests
@@ -21,7 +21,7 @@ api.interceptors.request.use(async (config) => {
   }
   return config;
 });
-
+  
 // Unified error handling
 api.interceptors.response.use(
   (response) => {
@@ -49,7 +49,7 @@ api.interceptors.response.use(
         }
       } else if (status === 401) {
         message = data.message || "Unauthorized";
-        await clearToken(); // clear token on auth failure
+        clearToken();
       } else if (data?.message) {
         message = data.message;
       }
@@ -60,48 +60,6 @@ api.interceptors.response.use(
 
     // Throw a standard Error object
     return Promise.reject(new Error(message));
-  }
-);
-
-api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response?.status === 422) {
-      // Return a custom error object without the full response
-      return Promise.reject({
-        message: 'Invalid credentials',
-        isValidationError: true
-      });
-    }
-    return Promise.reject(error);
-  }
-);
-
-// Handle token refresh or logout on 401 errors
-api.interceptors.response.use(
-  response => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      await clearToken();
-      // Redirect to login screen
-    }
-    return Promise.reject(error);
-  }
-);
-
-// Automatically save tokens from login/register responses
-api.interceptors.response.use(
-  (response) => {
-    if (response.data.token) {
-      saveToken(response.data.token); // Save any incoming tokens
-    }
-    return response;
-  },
-  (error) => {
-    if (error.response?.status === 401) {
-      clearToken(); // Clear token on auth errors
-    }
-    return Promise.reject(error);
   }
 );
 

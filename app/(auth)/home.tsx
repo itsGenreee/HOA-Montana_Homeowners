@@ -1,4 +1,3 @@
-import { useAuth } from "@/contexts/AuthContext"; // <- Get user info
 import { useReservationService } from "@/services/ReservationService";
 import { ReservationQRCode } from "@/utils/QrCodeGenerator";
 import dayjs from "dayjs";
@@ -23,7 +22,6 @@ type Reservation = {
 
 export default function Home() {
   const { getUserReservations } = useReservationService();
-  const { user } = useAuth(); // Get authenticated user info
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [visible, setVisible] = useState(false);
@@ -105,15 +103,6 @@ export default function Home() {
               </Text>
               <ReservationQRCode
                 reservation={{
-                  id: selectedReservation.id,
-                  user_id: user?.id ?? 0, // must exist for signature (fallback 0 if missing)
-                  first_name: user?.first_name,
-                  last_name: user?.last_name,
-                  facility: selectedReservation.facility,        // display only
-                  facility_id: selectedReservation.facility_id,  // must exist for signature
-                  date: selectedReservation.date,
-                  start_time: selectedReservation.start_time,
-                  end_time: selectedReservation.end_time,
                   reservation_token: selectedReservation.reservation_token,
                   digital_signature: selectedReservation.digital_signature,
                 }}

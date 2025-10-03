@@ -1,22 +1,49 @@
 import FormTextFields from "@/components/FormTextFields";
 import LoadingModal from "@/components/LoadingModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { theme } from "@/theme";
+import { retrieveToken } from "@/utils/TokenStorage";
 import { Link, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SafeAreaView, StyleSheet, View } from "react-native";
-import { Button, Dialog, Portal, Text, useTheme } from "react-native-paper";
+import { Button, Dialog, Portal, Text } from "react-native-paper";
 
 export default function Index() {
-  const theme = useTheme();
   const router = useRouter();
-  const { login, isLoading } = useAuth(); 
+  const { login, isLoading, user, me } = useAuth(); 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Dialog state
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogTitle, setDialogTitle] = useState("");
   const [dialogMessage, setDialogMessage] = useState("");
+
+  useEffect(() => {
+    const checkExistingAuth = async () => {
+      try {
+        // First check if we have a token before calling me()
+        const token = await retrieveToken();
+        if (token) {
+          await me(); // Only call me() if we have a token
+        }
+      } catch (error) {
+        // Token is invalid or doesn't exist, stay on login page
+        console.log('No valid token found:', error);
+      } finally {
+        setCheckingAuth(false); // Auth check complete
+      }
+    };
+
+    checkExistingAuth();
+  }, [me]);
+
+  useEffect(() => {
+    if (!checkingAuth && user) {
+      router.replace("/home");
+    }
+  }, [user, checkingAuth, router]);
 
   const showDialog = (title: string, message: string) => {
     setDialogTitle(title);
@@ -35,7 +62,7 @@ export default function Index() {
     try {
       await login(email, password);
       showDialog("Success", "Login Successful!");
-      router.replace("/home");
+      // REMOVED: router.replace("/home") - Let the useEffect handle navigation
     } catch (error: any) {
       showDialog("Login Failed", error.message || "Something went wrong");
       if (__DEV__) console.log("Full login error:", error);

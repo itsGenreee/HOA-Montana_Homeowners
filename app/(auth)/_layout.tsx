@@ -3,18 +3,22 @@ import { ReservationProvider } from "@/contexts/ReservationContext";
 import Entypo from "@expo/vector-icons/Entypo";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import { Redirect, Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
+import { useEffect } from "react";
 import { useTheme } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 
 export default function AuthLayout() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const theme = useTheme();
+  const router = useRouter();
 
-  if (!user) {
-    return <Redirect href="../index" />;
-  }
+    useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace('/');
+    }
+  }, [user, isLoading, router]);
 
   return (
     <SafeAreaProvider>
