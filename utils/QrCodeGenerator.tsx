@@ -17,7 +17,6 @@ type QRCodeProps = {
 };
 
 export function ReservationQRCode({ reservation, size = 280 }: QRCodeProps) {
-  // 👇 ULTRA SIMPLIFIED: Only token + signature
   const qrData = JSON.stringify({
     reservation_token: reservation.reservation_token,
     digital_signature: reservation.digital_signature,
@@ -33,13 +32,7 @@ export function ReservationQRCode({ reservation, size = 280 }: QRCodeProps) {
       />
       {/* Display info for humans reading the QR code */}
       <View style={{ marginTop: 10, alignItems: 'center' }}>
-        <Text style={{ fontSize: 14, fontWeight: 'bold' }}>
-          {reservation.facility}
-        </Text>
-        <Text style={{ fontSize: 12, color: '#666' }}>
-          {reservation.date} • {reservation.start_time}-{reservation.end_time}
-        </Text>
-        <Text style={{ fontSize: 10, color: '#999', marginTop: 4 }}>
+        <Text style={{ fontSize: 14, color: '#999', marginTop: 4 }}>
           Scan for check-in
         </Text>
       </View>

@@ -10,7 +10,6 @@ export default function Amenity() {
   const { 
     setEventType, setGuestCount,
     setChairQuantity, setChairPrice,
-    setTableQuantity, setTablePrice,
     setVideoke, setVideokePrice,
     setProjector, setProjectorPrice,
     setBridesRoom, setBridesRoomPrice,
@@ -26,24 +25,39 @@ export default function Amenity() {
   const [amenities, setAmenityOptions] = useState<any[]>([]);
   const [quantities, setQuantities] = useState<{ [id: number]: number }>({});
 
-
-  useEffect(() => {
-    const fetchAmenities = async () => {
-      try {
-        const data = await getAmenities();
-        setAmenityOptions(data);
-      } catch (error) {
-        console.error("Failed to fetch amenities:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAmenities();
-  }, [getAmenities]);
+useEffect(() => {
+  const fetchAmenities = async () => {
+    try {
+      const data = await getAmenities();
+      console.log('Fetched amenities:', data); // Add this line
+      setAmenityOptions(data);
+    } catch (error) {
+      console.error("Failed to fetch amenities:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchAmenities();
+}, [getAmenities]);
 
   const handleQuantityChange = (id: number, value: string) => {
-    const quantity = parseInt(value, 10) || 0;
-    setQuantities(prev => ({ ...prev, [id]: quantity }));
+    // Remove non-numeric characters
+    const numericValue = value.replace(/[^0-9]/g, '');
+    
+    if (numericValue === '') {
+      setQuantities(prev => ({ ...prev, [id]: 0 }));
+      return;
+    }
+
+    const quantity = parseInt(numericValue, 10);
+    const amenity = amenities.find(a => a.id === id);
+    
+    if (amenity && quantity <= amenity.max_quantity) {
+      setQuantities(prev => ({ ...prev, [id]: quantity }));
+    } else if (amenity && quantity > amenity.max_quantity) {
+      // Set to max quantity if input exceeds max
+      setQuantities(prev => ({ ...prev, [id]: amenity.max_quantity }));
+    }
   };
 
   const toggleAmenity = (amenity: any) => {
@@ -57,6 +71,7 @@ export default function Amenity() {
     setEventType(eventType === "Others" ? customEvent : eventType);
     // Save guest count as number (default 0 if empty)
     setGuestCount(parseInt(guestCount, 10) || 0);
+    
     // Update context with quantities and prices for UI display
     amenities.forEach(amenity => {
       const quantity = quantities[amenity.id] || 0;
@@ -64,27 +79,23 @@ export default function Amenity() {
       switch(amenity.id) {
         case 1: // Chair
           setChairQuantity(quantity);
-          setChairPrice(amenity.price);
+          setChairPrice(parseFloat(amenity.price));
           break;
-        case 2: // Table
-          setTableQuantity(quantity);
-          setTablePrice(amenity.price);
-          break;
-        case 3: // Videoke
+        case 2: // Videoke
           setVideoke(quantity);
-          setVideokePrice(amenity.price);
+          setVideokePrice(parseFloat(amenity.price));
           break;
-        case 4: // Projector Set
+        case 3: // Projector Set
           setProjector(quantity);
-          setProjectorPrice(amenity.price);
+          setProjectorPrice(parseFloat(amenity.price));
           break;
-        case 5: // Brides Room
+        case 4: // Brides Room
           setBridesRoom(quantity);
-          setBridesRoomPrice(amenity.price);
+          setBridesRoomPrice(parseFloat(amenity.price));
           break;
-        case 6: // Island Garden
+        case 5: // Island Garden
           setIslandGarden(quantity);
-          setIslandGardenPrice(amenity.price);
+          setIslandGardenPrice(parseFloat(amenity.price));
           break;
       }
     });
@@ -94,7 +105,7 @@ export default function Amenity() {
 
   const calculateAmenityTotal = (amenity: any) => {
     const quantity = quantities[amenity.id] || 0;
-    return quantity * amenity.price;
+    return quantity * parseFloat(amenity.price);
   };
 
   const calculateTotal = () => {
@@ -121,7 +132,7 @@ export default function Amenity() {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
 
-                {/* 1. EVENT TYPE SELECTION */}
+        {/* 1. EVENT TYPE SELECTION */}
         <Card style={styles.headerCard}>
           <Card.Content>
             <Text variant="titleLarge" style={styles.title}>
@@ -186,7 +197,7 @@ export default function Amenity() {
                 <View style={styles.amenityInfo}>
                   <Text variant="titleMedium">{amenity.name}</Text>
                   <Text variant="bodyMedium" style={styles.priceText}>
-                    ₱{amenity.price.toLocaleString()} {amenity.max_quantity === 1 ? '' : 'each'}
+                    ₱{parseFloat(amenity.price).toLocaleString()} {amenity.max_quantity === 1 ? '' : 'each'}
                   </Text>
                 </View>
                 {amenity.max_quantity === 1 && (
@@ -229,7 +240,7 @@ export default function Amenity() {
                   <View style={styles.amenityTotalRow}>
                     <Text variant="bodyMedium">Item Total:</Text>
                     <Text variant="bodyMedium" style={styles.amenityTotalText}>
-                      {quantities[amenity.id]} × ₱{amenity.price.toLocaleString()} = ₱{calculateAmenityTotal(amenity).toLocaleString()}
+                      {quantities[amenity.id]} × ₱{parseFloat(amenity.price).toLocaleString()} = ₱{calculateAmenityTotal(amenity).toLocaleString()}
                     </Text>
                   </View>
                 </>
@@ -308,7 +319,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
   },
-    radioRow: {
+  radioRow: {
     flexDirection: "row",
     alignItems: "center",
     marginVertical: 4,

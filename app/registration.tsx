@@ -11,6 +11,7 @@ import { ActivityIndicator, Button, Dialog, Portal, Text } from 'react-native-pa
 const Registration = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmedPassword, setConfirmedPassword] = useState("");
@@ -46,9 +47,16 @@ const Registration = () => {
     showDialog("Creating your account...");
 
     try {
+            console.log(firstName);
+            console.log(lastName);
+            console.log(address);
+            console.log(email);
+            console.log(password);
+            console.log(confirmedPassword);
       const response = await api.post('/register', {
         first_name: firstName,
         last_name: lastName,
+        address: address,
         email: email,
         password: password,
         password_confirmation: confirmedPassword
@@ -91,6 +99,7 @@ const Registration = () => {
 
         <FormTextFields label='First Name:' value={firstName} onChangeText={setFirstName} autoCapitalize='words' placeholder="Enter your first name" editable={!isLoading} />
         <FormTextFields label='Last Name:' value={lastName} onChangeText={setLastName} autoCapitalize='words' placeholder="Enter your last name" editable={!isLoading} />
+        <FormTextFields label='Address:' value={address} onChangeText={setAddress} autoCapitalize='words' placeholder="Enter your address" editable={!isLoading} />
         <FormTextFields label='Email:' value={email} onChangeText={setEmail} autoCapitalize='none' keyboardType='email-address' placeholder="Enter your email" editable={!isLoading} />
         <FormTextFields label="Password:" value={password} onChangeText={setPassword} autoCapitalize='none' secureTextEntry placeholder="At least 8 characters" editable={!isLoading} />
         <FormTextFields label="Confirm Password:" value={confirmedPassword} onChangeText={setConfirmedPassword} autoCapitalize='none' secureTextEntry placeholder="Re-enter your password" editable={!isLoading} />

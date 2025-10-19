@@ -7,6 +7,7 @@ type ReservationContextType = {
   start_time: Date | null;
   end_time: Date | null;
   facility_fee: number | null;  
+  discounted_fee: number | null;
 
   // amenities
   event_type: string | null;
@@ -31,6 +32,7 @@ type ReservationContextType = {
   setStartTime: React.Dispatch<React.SetStateAction<Date | null>>;
   setEndTime: React.Dispatch<React.SetStateAction<Date | null>>;
   setFacilityFee: React.Dispatch<React.SetStateAction<number | null>>;
+  setDiscountedFee: React.Dispatch<React.SetStateAction<number | null>>;
 
   setEventType: React.Dispatch<React.SetStateAction<string | null>>;
   setGuestCount: React.Dispatch<React.SetStateAction<number | null>>;
@@ -60,6 +62,8 @@ export const ReservationProvider = ({ children }: { children: ReactNode }) => {
   const [start_time, setStartTime] = useState<Date | null>(null);
   const [end_time, setEndTime] = useState<Date | null>(null);
   const [facility_fee, setFacilityFee] = useState<number | null>(null);
+  const [discounted_fee, setDiscountedFee] = useState<number | null>(null);
+
 
   // amenities states
   const [event_type, setEventType] = useState<string | null>(null);
@@ -84,6 +88,7 @@ export const ReservationProvider = ({ children }: { children: ReactNode }) => {
     setStartTime(null);
     setEndTime(null);
     setFacilityFee(null);
+    setDiscountedFee(null);
 
     // reset amenities
     setEventType(null);
@@ -111,6 +116,7 @@ export const ReservationProvider = ({ children }: { children: ReactNode }) => {
         start_time,
         end_time,
         facility_fee,
+        discounted_fee,
         event_type,
         guest_count,
         chair_quantity,
@@ -130,6 +136,7 @@ export const ReservationProvider = ({ children }: { children: ReactNode }) => {
         setStartTime,
         setEndTime,
         setFacilityFee,
+        setDiscountedFee,
         setEventType,
         setGuestCount,
         setChairQuantity,

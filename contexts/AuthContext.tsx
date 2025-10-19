@@ -13,6 +13,7 @@ type AuthContextType = {
   register: (userData: {
     first_name: string;
     last_name: string;
+    address: string;
     email: string;
     password: string;
     password_confirmation: string;
@@ -70,6 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log(email, password);
       const { user, token } = await AuthService.login(email, password);
       await saveToken(token);
       setUser(user);
@@ -100,6 +102,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async (userData: {
     first_name: string;
     last_name: string;
+    address: string;
     email: string;
     password: string;
     password_confirmation: string;

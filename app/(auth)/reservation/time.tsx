@@ -1,3 +1,4 @@
+import { useAuth } from "@/contexts/AuthContext"; // Assuming you have an AuthContext
 import { useReservation } from "@/contexts/ReservationContext";
 import AvailabilityService from "@/services/AvailabilityService";
 import { useRouter } from "expo-router";
@@ -6,12 +7,16 @@ import { FlatList, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { Button, Card, useTheme } from "react-native-paper";
 
 export default function Time() {
-  const { facility_id, date, setStartTime, setEndTime, setFacilityFee } = useReservation();
+  const { facility_id, date, setStartTime, setEndTime, setFacilityFee, setDiscountedFee } = useReservation();
+  const { user } = useAuth(); // Get user info to check verification status
   const router = useRouter();
   const theme = useTheme();
 
   const [slots, setSlots] = useState<any[]>([]);
   const [selected, setSelected] = useState<any | null>(null);
+
+  // Check if user is verified (adjust this based on your user object structure)
+  const isUserVerified = user?.status === 1// Adjust based on your user schema
 
   useEffect(() => {
     const fetchAvailability = async () => {
@@ -49,11 +54,16 @@ export default function Time() {
             const end = new Date(baseDate);
             end.setHours(endTime.hours, endTime.minutes, 0, 0);
             
+            // Determine which fee to display based on user verification
+            const displayFee = isUserVerified ? slot.discounted_fee : slot.fee;
+            
             return {
               ...slot,
               start, // Full Date object with correct date and time
               end,   // Full Date object with correct date and time
               label: `${slot.start_time} - ${slot.end_time}`,
+              displayFee, // The fee to display based on user status
+              isDiscounted: isUserVerified && slot.discounted_fee < slot.fee,
             };
           });
 
@@ -65,14 +75,22 @@ export default function Time() {
     };
 
     fetchAvailability();
-  }, [facility_id, date]);
+  }, [facility_id, date, isUserVerified]); // Add isUserVerified to dependencies
 
   const handleNext = () => {
     if (selected) {
-      // Store the actual Date objects
+      // Store the actual Date objects and appropriate fee
       setStartTime(selected.start);
       setEndTime(selected.end);
-      setFacilityFee(selected.fee);
+      
+      // Use discounted fee if user is verified, otherwise use regular fee
+      if (isUserVerified) {
+        setFacilityFee(selected.discounted_fee);
+        setDiscountedFee(selected.discounted_fee);
+      } else {
+        setFacilityFee(selected.fee);
+        setDiscountedFee(selected.fee); // Or set to null/0 if no discount
+      }
       
       router.replace("./summary");
     }
@@ -103,14 +121,27 @@ export default function Time() {
 
           {/* Show fee only if slot is available */}
           {item.available ? (
-            <Text
-              style={[
-                styles.feeText,
-                { color: isSelected ? "#fff" : theme.colors.onSurface },
-              ]}
-            >
-              ₱{item.fee}
-            </Text>
+            <View style={styles.feeContainer}>
+              {item.isDiscounted && (
+                <Text style={[styles.originalFee, { color: isSelected ? "#fff" : "#9ca3af" }]}>
+                  ₱{item.fee}
+                </Text>
+              )}
+              <Text
+                style={[
+                  styles.feeText,
+                  { color: isSelected ? "#fff" : theme.colors.onSurface },
+                  item.isDiscounted && styles.discountedFee,
+                ]}
+              >
+                ₱{item.displayFee}
+              </Text>
+              {item.isDiscounted && (
+                <Text style={[styles.discountBadge, { color: isSelected ? "#fff" : theme.colors.primary }]}>
+                  Discounted
+                </Text>
+              )}
+            </View>
           ) : (
             <Text style={{ color: "red" }}>Reserved</Text>
           )}
@@ -125,6 +156,14 @@ export default function Time() {
         Select a Time Slot
       </Text>
 
+      {isUserVerified && (
+        <View style={[styles.discountBanner, { backgroundColor: theme.colors.primaryContainer }]}>
+          <Text style={[styles.discountText, { color: theme.colors.onPrimaryContainer }]}>
+            ✓ Verified user discount applied
+          </Text>
+        </View>
+      )}
+
       <FlatList
         data={slots}
         keyExtractor={(item, index) => item.id || `${item.start_time}-${index}`}
@@ -138,7 +177,12 @@ export default function Time() {
             Selected: {selected.label}
           </Text>
           <Text style={[styles.selectedText, { color: theme.colors.onBackground }]}>
-            Fee: ₱{selected.fee}
+            Fee: ₱{selected.displayFee}
+            {selected.isDiscounted && (
+              <Text style={[styles.originalFee, { color: theme.colors.onBackground }]}>
+                {" "}(Originally ₱{selected.fee})
+              </Text>
+            )}
           </Text>
           <Button mode="contained" onPress={handleNext}>
             Next
@@ -151,16 +195,51 @@ export default function Time() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
-  title: { fontSize: 20, fontWeight: "600", textAlign: "center", marginBottom: 20 },
+  title: { fontSize: 20, fontWeight: "600", textAlign: "center", marginVertical: 20 },
+  discountBanner: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  discountText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
   list: { paddingBottom: 20 },
   card: {
     marginVertical: 6,
     borderRadius: 12,
     padding: 16,
   },
-  cardContent: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  cardContent: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center" 
+  },
   cardText: { fontSize: 16, fontWeight: "500" },
-  feeText: { fontSize: 14 },
+  feeContainer: {
+    alignItems: 'flex-end',
+  },
+  feeText: { 
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  discountedFee: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#10b981', // Green color for discounted price
+  },
+  originalFee: {
+    fontSize: 12,
+    textDecorationLine: 'line-through',
+    marginBottom: 2,
+  },
+  discountBadge: {
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 2,
+  },
   nextContainer: {
     marginTop: 20,
     alignItems: "center",

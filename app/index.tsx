@@ -37,7 +37,7 @@ export default function Index() {
     };
 
     checkExistingAuth();
-  }, [me]);
+  }, []);
 
   useEffect(() => {
     if (!checkingAuth && user) {

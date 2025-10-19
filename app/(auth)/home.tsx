@@ -37,7 +37,7 @@ export default function Home() {
         }
       };
       fetchReservations();
-    }, [getUserReservations])
+    }, [])
   );
 
   const openQrModal = (reservation: Reservation) => {

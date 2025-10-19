@@ -8,7 +8,6 @@ export const useReservationService = () => {
   const { user } = useAuth();
   const {
     chair_quantity,
-    table_quantity,
     videoke,
     projector,
     brides_room,
@@ -22,21 +21,20 @@ export const useReservationService = () => {
     if (chair_quantity && chair_quantity > 0) {
       amenities.push({ amenity_id: 1, quantity: chair_quantity });
     }
-    if (table_quantity && table_quantity > 0) {
-      amenities.push({ amenity_id: 2, quantity: table_quantity });
-    }
+    // Removed table - ID 2 is now Videoke
     if (videoke && videoke > 0) {
-      amenities.push({ amenity_id: 3, quantity: videoke });
+      amenities.push({ amenity_id: 2, quantity: videoke });
     }
     if (projector && projector > 0) {
-      amenities.push({ amenity_id: 4, quantity: projector });
+      amenities.push({ amenity_id: 3, quantity: projector });
     }
     if (brides_room && brides_room > 0) {
-      amenities.push({ amenity_id: 5, quantity: brides_room });
+      amenities.push({ amenity_id: 4, quantity: brides_room });
     }
     if (island_garden && island_garden > 0) {
-      amenities.push({ amenity_id: 6, quantity: island_garden });
+      amenities.push({ amenity_id: 5, quantity: island_garden });
     }
+    // Removed amenity_id: 6 - no longer exists
 
     return amenities;
   };

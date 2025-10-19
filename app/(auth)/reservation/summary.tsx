@@ -68,7 +68,13 @@ export default function Summary() {
     showDialog("Processing reservation...");
 
     try {
-      // REMOVE the fee parameter - server calculates it!
+
+      console.log(event_type);
+      console.log(guest_count);
+      console.log(facility_id);
+      console.log(date);
+      console.log(start_time);
+      console.log(end_time);
       await reservationService.create({
         event_type,
         guest_count,
@@ -213,7 +219,10 @@ export default function Summary() {
           <View style={styles.totalRow}>
             <Text variant="titleLarge">Estimated Total:</Text>
             <Text variant="titleLarge">
-              {`₱${((facility_fee || 0) + (isEventPlace ? calculateAmenitiesTotal() : 0)).toLocaleString()}`}
+              ₱{(
+              Number(facility_fee) +
+              (isEventPlace ? Number(calculateAmenitiesTotal()) : 0)
+            ).toLocaleString()}
             </Text>
           </View>
           
