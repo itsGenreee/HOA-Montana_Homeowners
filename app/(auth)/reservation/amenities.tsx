@@ -2,7 +2,7 @@ import { useReservation } from "@/contexts/ReservationContext";
 import { useReservationService } from "@/services/ReservationService";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Platform, ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Button, Card, Divider, RadioButton, Text, TextInput } from "react-native-paper";
 
 export default function Amenity() {
@@ -19,29 +19,33 @@ export default function Amenity() {
   const { getAmenities } = useReservationService();
 
   const [loading, setLoading] = useState(true);
-  const [eventType, setLocalEventType] = useState<string>("Wedding");
+  const [eventType, setLocalEventType] = useState<string>("");
   const [customEvent, setCustomEvent] = useState<string>("");
   const [guestCount, setLocalGuestCount] = useState<string>("");
   const [amenities, setAmenityOptions] = useState<any[]>([]);
   const [quantities, setQuantities] = useState<{ [id: number]: number }>({});
 
-useEffect(() => {
-  const fetchAmenities = async () => {
-    try {
-      const data = await getAmenities();
-      console.log('Fetched amenities:', data); // Add this line
-      setAmenityOptions(data);
-    } catch (error) {
-      console.error("Failed to fetch amenities:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  fetchAmenities();
-}, [getAmenities]);
+  // Validation states
+  const [eventTypeError, setEventTypeError] = useState<string>("");
+  const [guestCountError, setGuestCountError] = useState<string>("");
+
+  useEffect(() => {
+    const fetchAmenities = async () => {
+      try {
+        const data = await getAmenities();
+        console.log('Fetched amenities:', data);
+        setAmenityOptions(data);
+      } catch (error) {
+        console.error("Failed to fetch amenities:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAmenities();
+  }, [getAmenities]);
 
   const handleQuantityChange = (id: number, value: string) => {
-    // Remove non-numeric characters
+    // Remove non-numeric characters (same as before)
     const numericValue = value.replace(/[^0-9]/g, '');
     
     if (numericValue === '') {
@@ -55,8 +59,30 @@ useEffect(() => {
     if (amenity && quantity <= amenity.max_quantity) {
       setQuantities(prev => ({ ...prev, [id]: quantity }));
     } else if (amenity && quantity > amenity.max_quantity) {
-      // Set to max quantity if input exceeds max
       setQuantities(prev => ({ ...prev, [id]: amenity.max_quantity }));
+    }
+  };
+
+  // New: Guest Count validation similar to chair quantity
+  const handleGuestCountChange = (value: string) => {
+    // Remove non-numeric characters (same logic as handleQuantityChange)
+    const numericValue = value.replace(/[^0-9]/g, '');
+    
+    if (numericValue === '') {
+      setLocalGuestCount('');
+      setGuestCountError('');
+      return;
+    }
+
+    // Parse as integer
+    const guestNumber = parseInt(numericValue, 10);
+    
+    // Set the numeric value (without any decimals, commas, or other characters)
+    setLocalGuestCount(numericValue);
+    
+    // Clear error if valid number
+    if (guestNumber > 0) {
+      setGuestCountError('');
     }
   };
 
@@ -67,10 +93,44 @@ useEffect(() => {
     }
   };
 
+  const validateForm = (): boolean => {
+    let isValid = true;
+
+    // Validate Event Type
+    if (!eventType) {
+      setEventTypeError("Please select an event type");
+      isValid = false;
+    } else if (eventType === "Others" && !customEvent.trim()) {
+      setEventTypeError("Please enter your event type");
+      isValid = false;
+    } else {
+      setEventTypeError("");
+    }
+
+    // Validate Guest Count
+    if (!guestCount.trim()) {
+      setGuestCountError("Please enter number of guests");
+      isValid = false;
+    } else if (parseInt(guestCount, 10) <= 0) {
+      setGuestCountError("Guest count must be greater than 0");
+      isValid = false;
+    } else {
+      setGuestCountError("");
+    }
+
+    return isValid;
+  };
+
   const handleNext = () => {
-    setEventType(eventType === "Others" ? customEvent : eventType);
-    // Save guest count as number (default 0 if empty)
-    setGuestCount(parseInt(guestCount, 10) || 0);
+    if (!validateForm()) {
+      return;
+    }
+
+    const finalEventType = eventType === "Others" ? customEvent : eventType;
+    const finalGuestCount = parseInt(guestCount, 10) || 0;
+    
+    setEventType(finalEventType);
+    setGuestCount(finalGuestCount);
     
     // Update context with quantities and prices for UI display
     amenities.forEach(amenity => {
@@ -114,9 +174,14 @@ useEffect(() => {
     }, 0);
   };
 
-  const hasSelection = Object.values(quantities).some(qty => qty > 0);
+  // Check if required fields are filled
+  const isFormValid = () => {
+    const hasValidEventType = eventType && (eventType !== "Others" || customEvent.trim());
+    const hasValidGuestCount = guestCount.trim() && parseInt(guestCount, 10) > 0;
+    return hasValidEventType && hasValidGuestCount;
+  };
 
-  // Get selected amenities with quantities > 0
+  const hasAmenitySelection = Object.values(quantities).some(qty => qty > 0);
   const selectedAmenities = amenities.filter(amenity => quantities[amenity.id] > 0);
 
   if (loading) {
@@ -132,20 +197,28 @@ useEffect(() => {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
 
-        {/* 1. EVENT TYPE SELECTION */}
+        {/* 1. EVENT TYPE SELECTION - REQUIRED */}
         <Card style={styles.headerCard}>
           <Card.Content>
             <Text variant="titleLarge" style={styles.title}>
-              Event Type
+              Event Type *
+            </Text>
+            <Text variant="bodySmall" style={styles.requiredText}>
+              Required field
             </Text>
             <RadioButton.Group
-              onValueChange={(value) => setLocalEventType(value)}
+              onValueChange={(value) => {
+                setLocalEventType(value);
+                if (value && value !== "Others") {
+                  setEventTypeError("");
+                }
+              }}
               value={eventType}
             >
               {["Wedding", "Birthday", "Baptismal", "Others"].map(type => (
                 <View key={type} style={styles.radioRow}>
                   <RadioButton value={type} />
-                  <Text>{type}</Text>
+                  <Text style={styles.radioText}>{type}</Text>
                 </View>
               ))}
             </RadioButton.Group>
@@ -153,28 +226,42 @@ useEffect(() => {
             {eventType === "Others" && (
               <TextInput
                 mode="outlined"
-                label="Enter custom event"
+                label="Enter custom event *"
                 value={customEvent}
-                onChangeText={setCustomEvent}
+                onChangeText={(text) => {
+                  setCustomEvent(text);
+                  if (text.trim()) {
+                    setEventTypeError("");
+                  }
+                }}
                 style={{ marginTop: 8 }}
+                error={!!eventTypeError}
               />
             )}
+            
+            {eventTypeError ? (
+              <Text style={styles.errorText}>{eventTypeError}</Text>
+            ) : null}
           </Card.Content>
         </Card>
 
-        {/* 2. GUEST COUNT */}
+        {/* 2. GUEST COUNT - REQUIRED */}
         <Card style={styles.headerCard}>
           <Card.Content>
             <Text variant="titleLarge" style={styles.title}>
-              Guest Count
+              Guest Count *
+            </Text>
+            <Text variant="bodySmall" style={styles.requiredText}>
+              Required field - Numbers only
             </Text>
             <TextInput
               mode="outlined"
-              label="Number of Guests"
+              label="Number of Guests *"
               keyboardType="numeric"
               value={guestCount}
-              onChangeText={setLocalGuestCount}
+              onChangeText={handleGuestCountChange} // Use the new validation function
               style={{ marginTop: 8 }}
+              error={!!guestCountError}
             />
           </Card.Content>
         </Card>
@@ -185,7 +272,7 @@ useEffect(() => {
               Select Amenities
             </Text>
             <Text variant="bodyMedium" style={styles.subtitle}>
-              Choose the amenities you need for your event
+              Optional - Choose the amenities you need for your event
             </Text>
           </Card.Content>
         </Card>
@@ -195,7 +282,9 @@ useEffect(() => {
             <Card.Content>
               <View style={styles.amenityHeader}>
                 <View style={styles.amenityInfo}>
-                  <Text variant="titleMedium">{amenity.name}</Text>
+                  <Text variant="titleMedium" style={styles.amenityName}>
+                    {amenity.name}
+                  </Text>
                   <Text variant="bodyMedium" style={styles.priceText}>
                     ₱{parseFloat(amenity.price).toLocaleString()} {amenity.max_quantity === 1 ? '' : 'each'}
                   </Text>
@@ -215,7 +304,7 @@ useEffect(() => {
                 <>
                   <Divider style={styles.divider} />
                   <View style={styles.quantitySection}>
-                    <Text variant="bodyMedium">Quantity:</Text>
+                    <Text variant="bodyMedium" style={styles.quantityLabel}>Quantity:</Text>
                     <View style={styles.quantityControls}>
                       <TextInput
                         mode="outlined"
@@ -238,7 +327,7 @@ useEffect(() => {
                 <>
                   <Divider style={styles.divider} />
                   <View style={styles.amenityTotalRow}>
-                    <Text variant="bodyMedium">Item Total:</Text>
+                    <Text variant="bodyMedium" style={styles.amenityTotalLabel}>Item Total:</Text>
                     <Text variant="bodyMedium" style={styles.amenityTotalText}>
                       {quantities[amenity.id]} × ₱{parseFloat(amenity.price).toLocaleString()} = ₱{calculateAmenityTotal(amenity).toLocaleString()}
                     </Text>
@@ -249,7 +338,7 @@ useEffect(() => {
           </Card>
         ))}
 
-        {hasSelection && (
+        {hasAmenitySelection && (
           <Card style={styles.totalCard}>
             <Card.Content>
               <Text variant="titleMedium" style={styles.breakdownTitle}>
@@ -258,10 +347,10 @@ useEffect(() => {
               
               {selectedAmenities.map((amenity) => (
                 <View key={amenity.id} style={styles.breakdownRow}>
-                  <Text variant="bodyMedium">
+                  <Text variant="bodyMedium" style={styles.breakdownItem}>
                     {amenity.name} ×{quantities[amenity.id]}
                   </Text>
-                  <Text variant="bodyMedium">
+                  <Text variant="bodyMedium" style={styles.breakdownPrice}>
                     ₱{calculateAmenityTotal(amenity).toLocaleString()}
                   </Text>
                 </View>
@@ -270,7 +359,9 @@ useEffect(() => {
               <Divider style={styles.breakdownDivider} />
               
               <View style={styles.finalTotalRow}>
-                <Text variant="titleMedium">Estimated Amenities Total:</Text>
+                <Text variant="titleMedium" style={styles.finalTotalLabel}>
+                  Amenities Total:
+                </Text>
                 <Text variant="headlineSmall" style={styles.totalAmount}>
                   ₱{calculateTotal().toLocaleString()}
                 </Text>
@@ -289,12 +380,17 @@ useEffect(() => {
           <Button
             mode="contained"
             onPress={handleNext}
-            disabled={!hasSelection}
+            disabled={!isFormValid()}
             style={styles.nextButton}
             contentStyle={styles.buttonContent}
           >
             Continue to Date Selection
           </Button>
+          {!isFormValid() && (
+            <Text style={styles.requiredHint}>
+              * Please fill in all required fields to continue
+            </Text>
+          )}
         </Card.Content>
       </Card>
     </View>
@@ -305,6 +401,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    paddingHorizontal: 20,
+    paddingBottom: 20
   },
   scrollContent: {
     padding: 16,
@@ -318,11 +417,17 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 16,
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
   },
   radioRow: {
     flexDirection: "row",
     alignItems: "center",
     marginVertical: 4,
+  },
+  radioText: {
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
   },
   headerCard: {
     marginBottom: 16,
@@ -330,12 +435,40 @@ const styles = StyleSheet.create({
   },
   title: {
     textAlign: 'center',
-    fontWeight: 'bold',
+    fontFamily: 'Satoshi-Bold',
+    fontWeight: '400',
   },
   subtitle: {
     textAlign: 'center',
     color: '#666',
     marginTop: 4,
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+  },
+  requiredText: {
+    textAlign: 'center',
+    color: '#666',
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+    marginBottom: 8,
+    fontStyle: 'italic',
+  },
+  errorText: {
+    color: '#d32f2f',
+    fontSize: 12,
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  helperText: {
+    color: '#666',
+    fontSize: 12,
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+    marginTop: 4,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   amenityCard: {
     marginBottom: 12,
@@ -350,9 +483,14 @@ const styles = StyleSheet.create({
   amenityInfo: {
     flex: 1,
   },
+  amenityName: {
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
+  },
   priceText: {
     color: '#2e7d32',
-    fontWeight: '600',
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
   },
   toggleButton: {
     minWidth: 100,
@@ -366,6 +504,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  quantityLabel: {
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
+  },
   quantityControls: {
     alignItems: 'center',
     gap: 4,
@@ -377,6 +519,8 @@ const styles = StyleSheet.create({
   },
   maxText: {
     color: '#666',
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
   },
   amenityTotalRow: {
     flexDirection: 'row',
@@ -385,9 +529,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
     padding: 4,
   },
+  amenityTotalLabel: {
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
+  },
   amenityTotalText: {
     color: '#2e7d32',
-    fontWeight: '600',
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
   },
   totalCard: {
     marginTop: 16,
@@ -395,7 +544,8 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   breakdownTitle: {
-    fontWeight: 'bold',
+    fontFamily: 'Satoshi-Bold',
+    fontWeight: '400',
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -405,6 +555,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 4,
     paddingHorizontal: 8,
+  },
+  breakdownItem: {
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+  },
+  breakdownPrice: {
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
   },
   breakdownDivider: {
     marginVertical: 8,
@@ -418,15 +576,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#d4edda',
     borderRadius: 6,
   },
+  finalTotalLabel: {
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
+  },
   totalAmount: {
     color: '#155724',
-    fontWeight: 'bold',
+    fontFamily: 'Satoshi-Bold',
+    fontWeight: '400',
   },
   noteText: {
     color: '#666',
     fontStyle: 'italic',
     marginTop: 8,
     textAlign: 'center',
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
   },
   footerCard: {
     position: 'absolute',
@@ -442,5 +607,14 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     paddingVertical: 8,
+  },
+  requiredHint: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 12,
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
 });

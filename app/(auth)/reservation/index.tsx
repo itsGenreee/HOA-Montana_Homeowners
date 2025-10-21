@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { SafeAreaView, StyleSheet } from "react-native";
+import { Platform, SafeAreaView, StatusBar, StyleSheet } from "react-native";
 import { Button, Text } from "react-native-paper";
 
 export default function ReservationIndex() {
@@ -18,5 +18,12 @@ export default function ReservationIndex() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
+  container: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center", 
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    paddingHorizontal: 20,
+    paddingBottom: 20
+  },
 });

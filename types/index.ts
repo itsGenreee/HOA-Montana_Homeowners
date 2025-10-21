@@ -3,6 +3,7 @@ export interface User {
   id: number;
   first_name: string;
   last_name: string;
+  address: string;
   email: string;
   status: number;
   created_at?: string;
@@ -11,7 +12,7 @@ export interface User {
 
 export interface Reservation {
   facility?: string;
-  date?: string;     // e.g. "2025-08-25"
-  time?: string;     // e.g. "13:00-14:00"
+  date?: string;
+  time?: string;
   user_id?: number;
 }

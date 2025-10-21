@@ -1,11 +1,88 @@
-// theme.ts
-import { MD3LightTheme as DefaultTheme, MD3DarkTheme } from 'react-native-paper';
+import {
+  MD3LightTheme as DefaultTheme,
+  MD3DarkTheme,
+  configureFonts
+} from 'react-native-paper';
+
+// Get the default font configuration
+const defaultFontConfig = configureFonts({ config: {} });
+
+// Create custom font config by only replacing fontFamily
+const customFontConfig = {
+  ...defaultFontConfig,
+  displayLarge: {
+    ...defaultFontConfig.displayLarge,
+    fontFamily: 'Satoshi-Black',
+  },
+  displayMedium: {
+    ...defaultFontConfig.displayMedium,
+    fontFamily: 'Satoshi-Bold',
+  },
+  displaySmall: {
+    ...defaultFontConfig.displaySmall,
+    fontFamily: 'Satoshi-Bold',
+  },
+  headlineLarge: {
+    ...defaultFontConfig.headlineLarge,
+    fontFamily: 'Satoshi-Bold',
+  },
+  headlineMedium: {
+    ...defaultFontConfig.headlineMedium,
+    fontFamily: 'Satoshi-Bold',
+  },
+  headlineSmall: {
+    ...defaultFontConfig.headlineSmall,
+    fontFamily: 'Satoshi-Medium',
+  },
+  titleLarge: {
+    ...defaultFontConfig.titleLarge,
+    fontFamily: 'Satoshi-Medium',
+  },
+  titleMedium: {
+    ...defaultFontConfig.titleMedium,
+    fontFamily: 'Satoshi-Medium',
+  },
+  titleSmall: {
+    ...defaultFontConfig.titleSmall,
+    fontFamily: 'Satoshi-Medium',
+  },
+  bodyLarge: {
+    ...defaultFontConfig.bodyLarge,
+    fontFamily: 'Satoshi-Regular',
+  },
+  bodyMedium: {
+    ...defaultFontConfig.bodyMedium,
+    fontFamily: 'Satoshi-Regular',
+  },
+  bodySmall: {
+    ...defaultFontConfig.bodySmall,
+    fontFamily: 'Satoshi-Regular',
+  },
+  labelLarge: {
+    ...defaultFontConfig.labelLarge,
+    fontFamily: 'Satoshi-Medium',
+  },
+  labelMedium: {
+    ...defaultFontConfig.labelMedium,
+    fontFamily: 'Satoshi-Medium',
+  },
+  labelSmall: {
+    ...defaultFontConfig.labelSmall,
+    fontFamily: 'Satoshi-Medium',
+  },
+};
+
+// Base theme with custom fonts
+const baseTheme = {
+  fonts: customFontConfig,
+};
 
 export const lightTheme = {
   ...DefaultTheme,
+  ...baseTheme,
   colors: {
     ...DefaultTheme.colors,
-    // React Native Paper generated light theme colors
+    // Your existing light theme colors
     primary: "rgb(153, 70, 28)",
     onPrimary: "rgb(255, 255, 255)",
     primaryContainer: "rgb(255, 219, 205)",
@@ -51,9 +128,10 @@ export const lightTheme = {
 
 export const darkTheme = {
   ...MD3DarkTheme,
+  ...baseTheme,
   colors: {
     ...MD3DarkTheme.colors,
-    // React Native Paper generated dark theme colors
+    // Your existing dark theme colors
     primary: "rgb(255, 181, 150)",
     onPrimary: "rgb(88, 30, 0)",
     primaryContainer: "rgb(122, 47, 5)",
@@ -97,5 +175,5 @@ export const darkTheme = {
   },
 };
 
-// For backward compatibility, you can keep the original export
+// For backward compatibility
 export const theme = lightTheme;

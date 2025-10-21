@@ -4,8 +4,8 @@ import { useReservationService } from "@/services/ReservationService";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Button, Dialog, Divider, Portal, Text } from "react-native-paper";
+import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Button, Card, Dialog, Divider, Portal, Text, useTheme } from "react-native-paper";
 
 export default function Summary() {
   const reservationService = useReservationService();
@@ -26,6 +26,7 @@ export default function Summary() {
   } = useReservation();
   const { user } = useAuth();
   const router = useRouter();
+  const theme = useTheme();
 
   const [loading, setLoading] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -68,7 +69,6 @@ export default function Summary() {
     showDialog("Processing reservation...");
 
     try {
-
       console.log(event_type);
       console.log(guest_count);
       console.log(facility_id);
@@ -82,7 +82,6 @@ export default function Summary() {
         date,
         start_time,
         end_time,
-        // REMOVED: fee: grandTotal, ← Server calculates this!
       });
 
       resetReservation();
@@ -113,145 +112,191 @@ export default function Summary() {
     }
   };
 
+  const estimatedTotal = Number(facility_fee) + (isEventPlace ? Number(calculateAmenitiesTotal()) : 0);
+
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
       <ScrollView style={styles.container}>
-        <Text variant="titleLarge" style={styles.title}>Reservation Summary</Text>
-
-        <View style={styles.content}>
-          <View style={styles.row}>
-            <Text variant="titleMedium">Name:</Text>
-            <Text>{user?.first_name} {user?.last_name}</Text>
-          </View>
-          <Divider style={styles.divider} />
-
-          <View style={styles.row}>
-            <Text variant="titleMedium">Facility:</Text>
-            <Text>{getFacilityName()}</Text>
-          </View>
-          <Divider style={styles.divider} />
-
-          <View style={styles.row}>
-            <Text variant="titleMedium">Date:</Text>
-            <Text>{formatDate(date)}</Text>
-          </View>
-          <Divider style={styles.divider} />
-
-          <View style={styles.row}>
-            <Text variant="titleMedium">Time:</Text>
-            <Text>{formatTime(start_time)} - {formatTime(end_time)}</Text>
-          </View>
-          <Divider style={styles.divider} />
-
-          <View style={styles.row}>
-            <Text variant="titleMedium">Facility Fee:</Text>
-            <Text> {`₱${facility_fee?.toLocaleString() || 0}`} </Text>
-          </View>
-          <Divider style={styles.divider} />
-
-          {/* Amenities Section - ONLY for Event Place */}
-          {isEventPlace && hasAmenities && (
-            <>
-            <View style={styles.row}>
-              <Text variant="titleMedium">Event Type:</Text>
-              <Text>{event_type || "N/A"}</Text>
-            </View>
-            <Divider style={styles.divider} />
-
-            <View style={styles.row}>
-              <Text variant="titleMedium">Guest Count:</Text>
-              <Text>{guest_count ? guest_count.toLocaleString() : "N/A"}</Text>
-            </View>
-            <Divider style={styles.divider} />
-              <Text variant="titleMedium" style={styles.sectionTitle}>Selected Amenities:</Text>
-              
-              {chair_quantity && chair_price && (
-                <View style={styles.amenityRow}>
-                  <Text>Chair ×{chair_quantity}</Text>
-                  <Text>₱{(chair_quantity * chair_price).toLocaleString()}</Text>
-                </View>
-              )}
-              
-              {table_quantity && table_price && (
-                <View style={styles.amenityRow}>
-                  <Text>Table ×{table_quantity}</Text>
-                  <Text>₱{(table_quantity * table_price).toLocaleString()}</Text>
-                </View>
-              )}
-              
-              {videoke && videoke_price && (
-                <View style={styles.amenityRow}>
-                  <Text>Videoke</Text>
-                  <Text>₱{videoke_price.toLocaleString()}</Text>
-                </View>
-              )}
-              
-              {projector && projector_price && (
-                <View style={styles.amenityRow}>
-                  <Text>Projector Set</Text>
-                  <Text>₱{projector_price.toLocaleString()}</Text>
-                </View>
-              )}
-              
-              {brides_room && brides_room_price && (
-                <View style={styles.amenityRow}>
-                  <Text>Brides Room</Text>
-                  <Text>₱{brides_room_price.toLocaleString()}</Text>
-                </View>
-              )}
-              
-              {island_garden && island_garden_price && (
-                <View style={styles.amenityRow}>
-                  <Text>Island Garden</Text>
-                  <Text>₱{island_garden_price.toLocaleString()}</Text>
-                </View>
-              )}
-
-              <View style={styles.amenityRow}>
-                <Text variant="titleMedium">Amenities Total:</Text>
-                <Text variant="titleMedium">₱{calculateAmenitiesTotal().toLocaleString()}</Text>
-              </View>
-              <Divider style={styles.divider} />
-            </>
-          )}
-
-          {/* Grand Total - Display only (server calculates actual total) */}
-          <View style={styles.totalRow}>
-            <Text variant="titleLarge">Estimated Total:</Text>
-            <Text variant="titleLarge">
-              ₱{(
-              Number(facility_fee) +
-              (isEventPlace ? Number(calculateAmenitiesTotal()) : 0)
-            ).toLocaleString()}
-            </Text>
-          </View>
-          
-          <Text variant="bodySmall" style={styles.noteText}>
-            *Final total will be confirmed by the server
+        <View style={styles.header}>
+          <Text variant="headlineMedium" style={styles.title}>Reservation Summary</Text>
+          <Text variant="bodyMedium" style={styles.subtitle}>
+            Review your reservation details before confirming
           </Text>
-          
-          <Divider style={styles.divider} />
-
-          <Button
-            mode="contained"
-            onPress={handleReservation}
-            style={styles.button}
-            contentStyle={{ paddingVertical: 8 }}
-            disabled={loading}
-          >
-            {loading ? "Processing..." : "Confirm Reservation"}
-          </Button>
         </View>
 
+        <Card style={styles.summaryCard}>
+          <Card.Content>
+            {/* User Information */}
+            <View style={styles.section}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>Personal Information</Text>
+              <View style={styles.row}>
+                <Text variant="bodyMedium" style={styles.label}>Name:</Text>
+                <Text variant="bodyMedium" style={styles.value}>
+                  {user?.first_name} {user?.last_name}
+                </Text>
+              </View>
+              <Divider style={styles.divider} />
+            </View>
+
+            {/* Facility Details */}
+            <View style={styles.section}>
+              <Text variant="titleMedium" style={styles.sectionTitle}>Facility Details</Text>
+              <View style={styles.row}>
+                <Text variant="bodyMedium" style={styles.label}>Facility:</Text>
+                <Text variant="bodyMedium" style={styles.value}>{getFacilityName()}</Text>
+              </View>
+              <Divider style={styles.divider} />
+
+              <View style={styles.row}>
+                <Text variant="bodyMedium" style={styles.label}>Date:</Text>
+                <Text variant="bodyMedium" style={styles.value}>{formatDate(date)}</Text>
+              </View>
+              <Divider style={styles.divider} />
+
+              <View style={styles.row}>
+                <Text variant="bodyMedium" style={styles.label}>Time:</Text>
+                <Text variant="bodyMedium" style={styles.value}>
+                  {formatTime(start_time)} - {formatTime(end_time)}
+                </Text>
+              </View>
+              <Divider style={styles.divider} />
+
+              <View style={styles.row}>
+                <Text variant="bodyMedium" style={styles.label}>Facility Fee:</Text>
+                <Text variant="bodyMedium" style={styles.feeValue}>
+                  ₱{facility_fee?.toLocaleString() || 0}
+                </Text>
+              </View>
+            </View>
+
+            {/* Event Details - Only for Event Place */}
+            {isEventPlace && (
+              <View style={styles.section}>
+                <Text variant="titleMedium" style={styles.sectionTitle}>Event Details</Text>
+                <View style={styles.row}>
+                  <Text variant="bodyMedium" style={styles.label}>Event Type:</Text>
+                  <Text variant="bodyMedium" style={styles.value}>{event_type || "N/A"}</Text>
+                </View>
+                <Divider style={styles.divider} />
+
+                <View style={styles.row}>
+                  <Text variant="bodyMedium" style={styles.label}>Guest Count:</Text>
+                  <Text variant="bodyMedium" style={styles.value}>
+                    {guest_count ? guest_count.toLocaleString() : "N/A"}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Amenities Section - ONLY for Event Place */}
+            {isEventPlace && hasAmenities && (
+              <View style={styles.section}>
+                <Text variant="titleMedium" style={styles.sectionTitle}>Selected Amenities</Text>
+                
+                {chair_quantity && chair_price && (
+                  <View style={styles.amenityRow}>
+                    <Text variant="bodyMedium" style={styles.amenityName}>Chair ×{chair_quantity}</Text>
+                    <Text variant="bodyMedium" style={styles.amenityPrice}>
+                      ₱{(chair_quantity * chair_price).toLocaleString()}
+                    </Text>
+                  </View>
+                )}
+                
+                {table_quantity && table_price && (
+                  <View style={styles.amenityRow}>
+                    <Text variant="bodyMedium" style={styles.amenityName}>Table ×{table_quantity}</Text>
+                    <Text variant="bodyMedium" style={styles.amenityPrice}>
+                      ₱{(table_quantity * table_price).toLocaleString()}
+                    </Text>
+                  </View>
+                )}
+                
+                {videoke && videoke_price && (
+                  <View style={styles.amenityRow}>
+                    <Text variant="bodyMedium" style={styles.amenityName}>Videoke</Text>
+                    <Text variant="bodyMedium" style={styles.amenityPrice}>
+                      ₱{videoke_price.toLocaleString()}
+                    </Text>
+                  </View>
+                )}
+                
+                {projector && projector_price && (
+                  <View style={styles.amenityRow}>
+                    <Text variant="bodyMedium" style={styles.amenityName}>Projector Set</Text>
+                    <Text variant="bodyMedium" style={styles.amenityPrice}>
+                      ₱{projector_price.toLocaleString()}
+                    </Text>
+                  </View>
+                )}
+                
+                {brides_room && brides_room_price && (
+                  <View style={styles.amenityRow}>
+                    <Text variant="bodyMedium" style={styles.amenityName}>Brides Room</Text>
+                    <Text variant="bodyMedium" style={styles.amenityPrice}>
+                      ₱{brides_room_price.toLocaleString()}
+                    </Text>
+                  </View>
+                )}
+                
+                {island_garden && island_garden_price && (
+                  <View style={styles.amenityRow}>
+                    <Text variant="bodyMedium" style={styles.amenityName}>Island Garden</Text>
+                    <Text variant="bodyMedium" style={styles.amenityPrice}>
+                      ₱{island_garden_price.toLocaleString()}
+                    </Text>
+                  </View>
+                )}
+
+                <Divider style={styles.thickDivider} />
+                <View style={styles.amenityTotalRow}>
+                  <Text variant="titleMedium" style={styles.amenityTotalLabel}>Amenities Total:</Text>
+                  <Text variant="titleMedium" style={styles.amenityTotalValue}>
+                    ₱{calculateAmenitiesTotal().toLocaleString()}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Total Section */}
+            <View style={styles.totalSection}>
+              <Divider style={styles.thickDivider} />
+              <View style={styles.totalRow}>
+                <Text variant="titleLarge" style={styles.totalLabel}>Estimated Total:</Text>
+                <Text variant="headlineSmall" style={styles.totalValue}>
+                  ₱{estimatedTotal.toLocaleString()}
+                </Text>
+              </View>
+              <Text variant="bodySmall" style={styles.noteText}>
+                *Final total will be confirmed by the server
+              </Text>
+            </View>
+          </Card.Content>
+        </Card>
+
+        <Button
+          mode="contained"
+          onPress={handleReservation}
+          style={styles.button}
+          contentStyle={styles.buttonContent}
+          labelStyle={styles.buttonLabel}
+          disabled={loading}
+        >
+          {loading ? "Processing..." : "Confirm Reservation"}
+        </Button>
+
         <Portal>
-          <Dialog visible={dialogVisible} onDismiss={hideDialog}>
-            <Dialog.Title>Notice</Dialog.Title>
-            <Dialog.Content style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              {loading && <ActivityIndicator />}
-              <Text>{dialogMessage}</Text>
+          <Dialog visible={dialogVisible} onDismiss={hideDialog} style={styles.dialog}>
+            <Dialog.Title style={styles.dialogTitle}>Notice</Dialog.Title>
+            <Dialog.Content style={styles.dialogContent}>
+              {loading && <ActivityIndicator size="small" style={styles.loader} />}
+              <Text variant="bodyMedium" style={styles.dialogMessage}>{dialogMessage}</Text>
             </Dialog.Content>
             <Dialog.Actions>
-              {!loading && <Button onPress={handleDialogOk}>OK</Button>}
+              {!loading && (
+                <Button onPress={handleDialogOk} style={styles.dialogButton}>
+                  OK
+                </Button>
+              )}
             </Dialog.Actions>
           </Dialog>
         </Portal>
@@ -261,37 +306,176 @@ export default function Summary() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#fff" },
-  container: { flex: 1, paddingHorizontal: 20 },
-  title: { fontWeight: "bold", marginBottom: 20, textAlign: "center", marginTop: 20 },
-  content: { width: "100%", maxWidth: 400, gap: 16, marginBottom: 40 },
-  row: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 },
+  safe: { 
+    flex: 1,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    paddingHorizontal: 10,
+    paddingBottom: 10
+  },
+  container: { 
+    flex: 1, 
+    paddingHorizontal: 20,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 24,
+    marginTop: 20,
+  },
+  title: { 
+    fontFamily: 'Satoshi-Bold',
+    fontWeight: '400',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+    textAlign: 'center',
+    color: '#666',
+  },
+  summaryCard: {
+    borderRadius: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    marginBottom: 24,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontFamily: 'Satoshi-Bold',
+    fontWeight: '400',
+    marginBottom: 16,
+    color: '#1f2937',
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  label: {
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
+    color: '#374151',
+  },
+  value: {
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+    textAlign: 'right',
+  },
+  feeValue: {
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
+    color: '#059669',
+    textAlign: 'right',
+  },
   amenityRow: { 
     flexDirection: "row", 
     justifyContent: "space-between", 
     paddingVertical: 6,
-    paddingLeft: 8 
+  },
+  amenityName: {
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+  },
+  amenityPrice: {
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
+    color: '#374151',
+  },
+  amenityTotalRow: {
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    paddingVertical: 8,
+    marginTop: 8,
+  },
+  amenityTotalLabel: {
+    fontFamily: 'Satoshi-Bold',
+    fontWeight: '400',
+  },
+  amenityTotalValue: {
+    fontFamily: 'Satoshi-Bold',
+    fontWeight: '400',
+    color: '#059669',
+  },
+  totalSection: {
+    marginTop: 8,
   },
   totalRow: { 
     flexDirection: "row", 
     justifyContent: "space-between", 
-    paddingVertical: 12,
+    alignItems: "center",
+    paddingVertical: 16,
     backgroundColor: "#f8f9fa",
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginTop: 8,
   },
-  sectionTitle: { 
-    marginTop: 16, 
-    marginBottom: 8,
-    fontWeight: "bold" 
+  totalLabel: {
+    fontFamily: 'Satoshi-Bold',
+    fontWeight: '400',
+  },
+  totalValue: {
+    fontFamily: 'Satoshi-Bold',
+    fontWeight: '400',
+    color: '#059669',
   },
   noteText: {
     color: "#666",
     fontStyle: "italic",
     textAlign: "center",
-    marginTop: 4,
+    marginTop: 8,
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
   },
-  divider: { backgroundColor: "#ccc", marginVertical: 4 },
-  button: { marginTop: 24, marginBottom: 40 },
+  divider: { 
+    backgroundColor: "#e5e7eb", 
+    height: 1,
+    marginVertical: 4,
+  },
+  thickDivider: {
+    backgroundColor: "#d1d5db",
+    height: 2,
+    marginVertical: 8,
+  },
+  button: { 
+    marginBottom: 40,
+    borderRadius: 12,
+    elevation: 2,
+  },
+  buttonContent: { 
+    paddingVertical: 8,
+  },
+  buttonLabel: {
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
+    fontSize: 16,
+  },
+  dialog: {
+    borderRadius: 16,
+  },
+  dialogTitle: {
+    fontFamily: 'Satoshi-Bold',
+    fontWeight: '400',
+  },
+  dialogContent: {
+    flexDirection: "row", 
+    alignItems: "center", 
+    gap: 12,
+  },
+  dialogMessage: {
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+    flex: 1,
+  },
+  dialogButton: {
+    borderRadius: 8,
+  },
+  loader: {
+    marginRight: 8,
+  },
 });

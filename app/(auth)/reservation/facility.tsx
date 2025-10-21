@@ -1,7 +1,7 @@
 import { useReservation } from "@/contexts/ReservationContext";
 import { useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
-import { Dimensions, FlatList, Image, Modal, StyleSheet, Text, View } from "react-native";
+import { Dimensions, FlatList, Image, Modal, Platform, StatusBar, StyleSheet, Text, View } from "react-native";
 import { Button, Card, IconButton, TouchableRipple, useTheme } from "react-native-paper";
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -160,7 +160,8 @@ export default function Facility() {
                   <Text
                     style={[
                       styles.cardText,
-                      isSelected && { color: "#fff", fontWeight: "600" },
+                      isSelected && styles.selectedCardText,
+                      isSelected && { color: "#fff" },
                     ]}
                   >
                     {option.name}
@@ -325,15 +326,18 @@ export default function Facility() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: "#f3f4f6",
     justifyContent: "center",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+    paddingHorizontal: 20,
+    paddingBottom: 20
   },
   header: {
     fontSize: 24,
-    fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
+    fontFamily: 'Satoshi-Bold', // Using bold for main header
+    fontWeight: '400',
   },
   grid: {
     flexDirection: "row",
@@ -355,12 +359,19 @@ const styles = StyleSheet.create({
   },
   cardText: {
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: 'Satoshi-Medium', // Medium weight for facility names
+    fontWeight: '400',
     color: "#111827",
     textAlign: "center",
   },
+  selectedCardText: {
+    fontFamily: 'Satoshi-Bold', // Bold when selected
+    fontWeight: '400',
+  },
   tapText: {
     fontSize: 12,
+    fontFamily: 'Satoshi-Regular', // Regular for secondary text
+    fontWeight: '400',
     color: "#6b7280",
     marginTop: 4,
     textAlign: "center",
@@ -372,7 +383,8 @@ const styles = StyleSheet.create({
   },
   selectedText: {
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: 'Satoshi-Medium', // Medium for selected text
+    fontWeight: '400',
   },
   // Modal Styles
   modalContainer: {
@@ -394,7 +406,8 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: 'Satoshi-Bold', // Bold for modal title
+    fontWeight: '400',
     textAlign: 'center',
   },
   carouselContainer: {
@@ -457,15 +470,17 @@ const styles = StyleSheet.create({
   },
   imageCounter: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Satoshi-Medium', // Medium for counter
+    fontWeight: '400',
     marginBottom: 8,
     textAlign: 'center',
   },
   description: {
     fontSize: 16,
+    fontFamily: 'Satoshi-Medium', // Medium for image descriptions
+    fontWeight: '400',
     textAlign: 'center',
     lineHeight: 22,
-    fontWeight: '500',
   },
   generalDescriptionContainer: {
     padding: 16,
@@ -476,12 +491,15 @@ const styles = StyleSheet.create({
   },
   generalDescriptionTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'Satoshi-Medium', // Medium for section titles
+    fontWeight: '400',
     marginBottom: 4,
     textAlign: 'center',
   },
   generalDescription: {
     fontSize: 14,
+    fontFamily: 'Satoshi-Regular', // Regular for body text
+    fontWeight: '400',
     textAlign: 'center',
     lineHeight: 20,
     fontStyle: 'italic',

@@ -5,8 +5,8 @@ import api from '@/utils/api';
 import { saveToken } from '@/utils/TokenStorage';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Button, Dialog, Portal, Text } from 'react-native-paper';
+import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Button, Card, Dialog, Portal, Text, useTheme } from 'react-native-paper';
 
 const Registration = () => {
   const [firstName, setFirstName] = useState("");
@@ -22,6 +22,7 @@ const Registration = () => {
 
   const { setUser } = useAuth();
   const router = useRouter();
+  const theme = useTheme();
 
   const showDialog = (message: string) => {
     setDialogMessage(message);
@@ -47,12 +48,13 @@ const Registration = () => {
     showDialog("Creating your account...");
 
     try {
-            console.log(firstName);
-            console.log(lastName);
-            console.log(address);
-            console.log(email);
-            console.log(password);
-            console.log(confirmedPassword);
+      console.log(firstName);
+      console.log(lastName);
+      console.log(address);
+      console.log(email);
+      console.log(password);
+      console.log(confirmedPassword);
+      
       const response = await api.post('/register', {
         first_name: firstName,
         last_name: lastName,
@@ -90,39 +92,150 @@ const Registration = () => {
     }
   };
 
+  const handleLoginRedirect = () => {
+    router.push('/');
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.formContainer}>
-        <Text variant="headlineSmall" style={styles.header}>
-          Create an Account
-        </Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.headerContainer}>
+          <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
+            Create Account
+          </Text>
+          <Text variant="bodyLarge" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+            Join us and start making reservations
+          </Text>
+        </View>
 
-        <FormTextFields label='First Name:' value={firstName} onChangeText={setFirstName} autoCapitalize='words' placeholder="Enter your first name" editable={!isLoading} />
-        <FormTextFields label='Last Name:' value={lastName} onChangeText={setLastName} autoCapitalize='words' placeholder="Enter your last name" editable={!isLoading} />
-        <FormTextFields label='Address:' value={address} onChangeText={setAddress} autoCapitalize='words' placeholder="Enter your address" editable={!isLoading} />
-        <FormTextFields label='Email:' value={email} onChangeText={setEmail} autoCapitalize='none' keyboardType='email-address' placeholder="Enter your email" editable={!isLoading} />
-        <FormTextFields label="Password:" value={password} onChangeText={setPassword} autoCapitalize='none' secureTextEntry placeholder="At least 8 characters" editable={!isLoading} />
-        <FormTextFields label="Confirm Password:" value={confirmedPassword} onChangeText={setConfirmedPassword} autoCapitalize='none' secureTextEntry placeholder="Re-enter your password" editable={!isLoading} />
+        <Card style={styles.formCard}>
+          <Card.Content style={styles.formContent}>
+            <View style={styles.formSection}>
+              <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
+                Personal Information
+              </Text>
+              
+              <FormTextFields 
+                label='First Name *' 
+                value={firstName} 
+                onChangeText={setFirstName} 
+                autoCapitalize='words' 
+                placeholder="Enter your first name" 
+                editable={!isLoading}
+                style={styles.input}
+              />
+              <FormTextFields 
+                label='Last Name *' 
+                value={lastName} 
+                onChangeText={setLastName} 
+                autoCapitalize='words' 
+                placeholder="Enter your last name" 
+                editable={!isLoading}
+                style={styles.input}
+              />
+              <FormTextFields 
+                label='Address' 
+                value={address} 
+                onChangeText={setAddress} 
+                autoCapitalize='words' 
+                placeholder="Enter your address" 
+                editable={!isLoading}
+                style={styles.input}
+              />
+            </View>
 
-        <Button mode="contained" onPress={handleRegister} disabled={isLoading} style={styles.button}>
-          Register
-        </Button>
-      </View>
+            <View style={styles.formSection}>
+              <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
+                Account Details
+              </Text>
+              
+              <FormTextFields 
+                label='Email *' 
+                value={email} 
+                onChangeText={setEmail} 
+                autoCapitalize='none' 
+                keyboardType='email-address' 
+                placeholder="Enter your email" 
+                editable={!isLoading}
+                style={styles.input}
+              />
+              <FormTextFields 
+                label="Password *" 
+                value={password} 
+                onChangeText={setPassword} 
+                autoCapitalize='none' 
+                secureTextEntry 
+                placeholder="At least 8 characters" 
+                editable={!isLoading}
+                style={styles.input}
+              />
+              <FormTextFields 
+                label="Confirm Password *" 
+                value={confirmedPassword} 
+                onChangeText={setConfirmedPassword} 
+                autoCapitalize='none' 
+                secureTextEntry 
+                placeholder="Re-enter your password" 
+                editable={!isLoading}
+                style={styles.input}
+              />
+            </View>
+
+            <View style={styles.requirements}>
+              <Text variant="bodySmall" style={[styles.requirementText, { color: theme.colors.onSurfaceVariant }]}>
+                * Required fields
+              </Text>
+              <Text variant="bodySmall" style={[styles.requirementText, { color: theme.colors.onSurfaceVariant }]}>
+                • Password must be at least 8 characters long
+              </Text>
+            </View>
+
+            <Button 
+              mode="contained" 
+              onPress={handleRegister} 
+              disabled={isLoading} 
+              style={styles.registerButton}
+              contentStyle={styles.buttonContent}
+              labelStyle={styles.buttonLabel}
+            >
+              Create Account
+            </Button>
+          </Card.Content>
+        </Card>
+
+        <Card style={styles.loginCard}>
+          <Card.Content style={styles.loginContent}>
+            <Text variant="bodyMedium" style={[styles.loginText, { color: theme.colors.onSurfaceVariant }]}>
+              Already have an account?
+            </Text>
+            <Button 
+              mode="text" 
+              onPress={handleLoginRedirect}
+              style={styles.loginButton}
+              labelStyle={styles.loginButtonLabel}
+            >
+              Sign In
+            </Button>
+          </Card.Content>
+        </Card>
+      </ScrollView>
 
       {/* Loading modal */}
       <LoadingModal visible={isLoading} message="Creating your account..." />
 
       {/* Dialog for messages */}
       <Portal>
-        <Dialog visible={dialogVisible} onDismiss={hideDialog}>
-          <Dialog.Title>Notice</Dialog.Title>
-          <Dialog.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            {isLoading && <ActivityIndicator />}
-            <Text>{dialogMessage}</Text>
+        <Dialog visible={dialogVisible} onDismiss={hideDialog} style={styles.dialog}>
+          <Dialog.Title style={styles.dialogTitle}>Notice</Dialog.Title>
+          <Dialog.Content style={styles.dialogContent}>
+            {isLoading && <ActivityIndicator size="small" style={styles.loader} />}
+            <Text variant="bodyMedium" style={styles.dialogMessage}>{dialogMessage}</Text>
           </Dialog.Content>
           {!isLoading && (
             <Dialog.Actions>
-              <Button onPress={handleDialogOk}>OK</Button>
+              <Button onPress={handleDialogOk} style={styles.dialogButton}>
+                OK
+              </Button>
             </Dialog.Actions>
           )}
         </Dialog>
@@ -134,8 +247,122 @@ const Registration = () => {
 export default Registration;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  formContainer: { padding: 20, gap: 16 },
-  header: { marginVertical: 16, fontWeight: 'bold' },
-  button: { marginTop: 16 },
+  container: { 
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+    marginTop: 20,
+  },
+  title: {
+    fontFamily: 'Satoshi-Bold',
+    fontWeight: '400',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+    textAlign: 'center',
+  },
+  formCard: {
+    borderRadius: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    marginBottom: 20,
+  },
+  formContent: {
+    paddingVertical: 8,
+  },
+  formSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontFamily: 'Satoshi-Bold',
+    fontWeight: '400',
+    marginBottom: 16,
+  },
+  input: {
+    marginBottom: 12,
+  },
+  requirements: {
+    marginBottom: 24,
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+  },
+  requirementText: {
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+    marginBottom: 4,
+  },
+  registerButton: {
+    borderRadius: 12,
+    elevation: 2,
+  },
+  buttonContent: {
+    paddingVertical: 8,
+  },
+  buttonLabel: {
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
+    fontSize: 16,
+  },
+  loginCard: {
+    borderRadius: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  loginContent: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  loginText: {
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+    marginRight: 8,
+  },
+  loginButton: {
+    margin: 0,
+  },
+  loginButtonLabel: {
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
+  },
+  dialog: {
+    borderRadius: 16,
+  },
+  dialogTitle: {
+    fontFamily: 'Satoshi-Bold',
+    fontWeight: '400',
+  },
+  dialogContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  dialogMessage: {
+    fontFamily: 'Satoshi-Regular',
+    fontWeight: '400',
+    flex: 1,
+  },
+  dialogButton: {
+    borderRadius: 8,
+  },
+  loader: {
+    marginRight: 8,
+  },
 });
