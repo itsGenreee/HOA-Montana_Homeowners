@@ -103,7 +103,6 @@ export default function Index() {
                 keyboardType="email-address"
                 placeholder="Enter your email"
                 style={styles.input}
-                leftIcon="email"
               />
               <FormTextFields
                 label="Password"
@@ -112,7 +111,6 @@ export default function Index() {
                 secureTextEntry
                 placeholder="Enter your password"
                 style={styles.input}
-                leftIcon="lock"
               />
             </View>
 

@@ -73,6 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log(email, password);
       const { user, token } = await AuthService.login(email, password);
+      console.log(user);
       await saveToken(token);
       setUser(user);
       setToken(token);
