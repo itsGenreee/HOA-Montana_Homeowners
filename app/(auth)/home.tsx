@@ -3,7 +3,7 @@ import { ReservationQRCode } from "@/utils/QrCodeGenerator";
 import dayjs from "dayjs";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, View } from "react-native";
+import { Platform, RefreshControl, SafeAreaView, ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import { Button, Card, Chip, Modal, Portal, Text } from "react-native-paper";
 
 type Reservation = {
@@ -24,20 +24,33 @@ export default function Home() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [visible, setVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchReservations = async () => {
+    try {
+      const data = await getUserReservations();
+      setReservations(data);
+    } catch (error) {
+      console.error("Failed to fetch reservations:", error);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
-      const fetchReservations = async () => {
-        try {
-          const data = await getUserReservations();
-          setReservations(data);
-        } catch (error) {
-          console.error("Failed to fetch reservations:", error);
-        }
-      };
       fetchReservations();
     }, [])
   );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchReservations();
+    } catch (error) {
+      console.error("Failed to refresh reservations:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   const openQrModal = (reservation: Reservation) => {
     if (reservation.status === "confirmed") {
@@ -88,9 +101,28 @@ export default function Home() {
           <Text variant="bodyLarge" style={styles.emptyText}>
             No reservations found
           </Text>
+          <Button 
+            mode="outlined" 
+            onPress={onRefresh}
+            style={styles.refreshButton}
+            icon="refresh"
+          >
+            Refresh
+          </Button>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView 
+          contentContainerStyle={styles.scroll}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#0000ff']} // Customize as needed
+              tintColor={'#0000ff'} // Customize as needed
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
           {reservations.map((item) => {
             const start = dayjs(`${item.date.split("T")[0]}T${item.start_time}`);
             const end = dayjs(`${item.date.split("T")[0]}T${item.end_time}`);
@@ -122,8 +154,15 @@ export default function Home() {
                     textStyle={[styles.statusText, statusStyle.text]}
                     compact
                   >
-                    {getStatusDisplay(item.status)}
+                    {getStatusDisplay(item.status)} 
                   </Chip>
+
+                  {/* Simple conditional remarks */}
+                  {item.status === "pending" && (
+                    <Text style={{marginTop: 8, color: "#d97706", fontSize: 12}}>
+                      Confirm at HOA Office
+                    </Text>
+                  )}
 
                   {/* QR Code Hint for confirmed reservations */}
                   {item.status === "confirmed" && (
@@ -248,9 +287,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    gap: 16,
   },
   emptyText: {
     color: "#666",
     textAlign: "center",
+  },
+  refreshButton: {
+    marginTop: 8,
   },
 });

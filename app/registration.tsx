@@ -4,8 +4,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import api from '@/utils/api';
 import { saveToken } from '@/utils/TokenStorage';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { TextInput as RNTextInput, SafeAreaView, StyleSheet, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { ActivityIndicator, Button, Card, Dialog, Portal, Text, useTheme } from 'react-native-paper';
 
 const Registration = () => {
@@ -20,6 +21,14 @@ const Registration = () => {
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
 
+  // Refs for input fields
+  const lastNameRef = useRef<RNTextInput>(null);
+  const addressRef = useRef<RNTextInput>(null);
+  const emailRef = useRef<RNTextInput>(null);
+  const passwordRef = useRef<RNTextInput>(null);
+  const confirmPasswordRef = useRef<RNTextInput>(null);
+  const scrollViewRef = useRef<any>(null);
+
   const { setUser } = useAuth();
   const router = useRouter();
   const theme = useTheme();
@@ -29,6 +38,10 @@ const Registration = () => {
     setDialogVisible(true);
   };
   const hideDialog = () => setDialogVisible(false);
+
+  const focusNextField = (nextRef: React.RefObject<RNTextInput>) => {
+    nextRef.current?.focus();
+  };
 
   async function handleRegister() {
     if (!firstName || !lastName || !email || !password || !confirmedPassword) {
@@ -48,13 +61,6 @@ const Registration = () => {
     showDialog("Creating your account...");
 
     try {
-      console.log(firstName);
-      console.log(lastName);
-      console.log(address);
-      console.log(email);
-      console.log(password);
-      console.log(confirmedPassword);
-      
       const response = await api.post('/register', {
         first_name: firstName,
         last_name: lastName,
@@ -67,11 +73,8 @@ const Registration = () => {
       const { user, token } = response.data;
       if (__DEV__) console.log(response.data);
 
-      // Save token & update context
       await saveToken(token);
       setUser(user);
-
-      // Update dialog message
       setDialogMessage("Registration successful!");
     } catch (error: any) {
       setDialogMessage(
@@ -98,7 +101,19 @@ const Registration = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <KeyboardAwareScrollView
+        ref={scrollViewRef}
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.scrollContent}
+        enableOnAndroid={true}
+        extraScrollHeight={50} // Increased for better visibility
+        keyboardOpeningTime={0}
+        enableResetScrollToCoords={false}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        enableAutomaticScroll={true}
+        extraHeight={100} // Additional buffer
+      >
         <View style={styles.headerContainer}>
           <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.onBackground }]}>
             Create Account
@@ -123,8 +138,11 @@ const Registration = () => {
                 placeholder="Enter your first name" 
                 editable={!isLoading}
                 style={styles.input}
+                returnKeyType="next"
+                onSubmitEditing={() => focusNextField(lastNameRef)}
               />
               <FormTextFields 
+                ref={lastNameRef}
                 label='Last Name *' 
                 value={lastName} 
                 onChangeText={setLastName} 
@@ -132,8 +150,11 @@ const Registration = () => {
                 placeholder="Enter your last name" 
                 editable={!isLoading}
                 style={styles.input}
+                returnKeyType="next"
+                onSubmitEditing={() => focusNextField(addressRef)}
               />
               <FormTextFields 
+                ref={addressRef}
                 label='Address' 
                 value={address} 
                 onChangeText={setAddress} 
@@ -141,6 +162,8 @@ const Registration = () => {
                 placeholder="Enter your address" 
                 editable={!isLoading}
                 style={styles.input}
+                returnKeyType="next"
+                onSubmitEditing={() => focusNextField(emailRef)}
               />
             </View>
 
@@ -150,6 +173,7 @@ const Registration = () => {
               </Text>
               
               <FormTextFields 
+                ref={emailRef}
                 label='Email *' 
                 value={email} 
                 onChangeText={setEmail} 
@@ -158,8 +182,11 @@ const Registration = () => {
                 placeholder="Enter your email" 
                 editable={!isLoading}
                 style={styles.input}
+                returnKeyType="next"
+                onSubmitEditing={() => focusNextField(passwordRef)}
               />
               <FormTextFields 
+                ref={passwordRef}
                 label="Password *" 
                 value={password} 
                 onChangeText={setPassword} 
@@ -168,8 +195,11 @@ const Registration = () => {
                 placeholder="At least 8 characters" 
                 editable={!isLoading}
                 style={styles.input}
+                returnKeyType="next"
+                onSubmitEditing={() => focusNextField(confirmPasswordRef)}
               />
               <FormTextFields 
+                ref={confirmPasswordRef}
                 label="Confirm Password *" 
                 value={confirmedPassword} 
                 onChangeText={setConfirmedPassword} 
@@ -178,6 +208,8 @@ const Registration = () => {
                 placeholder="Re-enter your password" 
                 editable={!isLoading}
                 style={styles.input}
+                returnKeyType="done"
+                onSubmitEditing={handleRegister}
               />
             </View>
 
@@ -218,7 +250,7 @@ const Registration = () => {
             </Button>
           </Card.Content>
         </Card>
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {/* Loading modal */}
       <LoadingModal visible={isLoading} message="Creating your account..." />

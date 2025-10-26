@@ -2,15 +2,29 @@ import LoadingModal from '@/components/LoadingModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import { Platform, RefreshControl, SafeAreaView, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 import { Avatar, Button, Card, IconButton, Text, useTheme } from 'react-native-paper';
 
 const Profile = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, me } = useAuth(); // Add me from context
   const router = useRouter();
   const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
+  const [refreshing, setRefreshing] = useState(false); // Add refresh state
+
+  // Pull-to-refresh handler
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await me(); // This will fetch fresh user data
+    } catch (error) {
+      console.error('Failed to refresh profile:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
 
   const handleLogout = async () => {
     setLoading(true);
@@ -61,8 +75,18 @@ const Profile = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header Section */}
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
+          />
+        }
+      >
+        {/* Header Section with Refresh Button */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             <Avatar.Text
@@ -88,6 +112,7 @@ const Profile = () => {
           <Text variant="bodyLarge" style={[styles.userEmail, { color: theme.colors.onSurfaceVariant }]}>
             {user?.email}
           </Text>
+
         </View>
 
         {/* Account Status Card */}
@@ -239,7 +264,7 @@ const Profile = () => {
         </Card>
       </ScrollView>
 
-      {/* Loading modal for logout */}
+      {/* Loading modal for logout and refresh */}
       <LoadingModal visible={loading} message={loadingMessage} />
     </SafeAreaView>
   );
@@ -307,6 +332,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Regular',
     fontWeight: '400',
     textAlign: 'center',
+    marginBottom: 12,
+  },
+  refreshButton: {
+    marginTop: 8,
+  },
+  refreshButtonLabel: {
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
+    fontSize: 14,
   },
   statusCard: {
     borderRadius: 16,

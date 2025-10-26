@@ -3,9 +3,8 @@ import { useReservation } from "@/contexts/ReservationContext";
 import AvailabilityService from "@/services/AvailabilityService";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { FlatList, Platform, SafeAreaView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { Button, Card, useTheme } from "react-native-paper";
-
 
 export default function Time() {
   const { facility_id, date, setStartTime, setEndTime, setFacilityFee, setDiscountedFee } = useReservation();
@@ -246,78 +245,90 @@ export default function Time() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.onBackground }]}>
-          {isEventPlace ? "Select Time Block" : "Select a Time Slot"}
-        </Text>
-        <Text style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
-          {isEventPlace 
-            ? "Choose your preferred time block for the event" 
-            : "Choose your preferred time for the event"
-          }
-        </Text>
-      </View>
-
-      {isUserVerified && (
-        <Card style={[styles.discountBanner, { backgroundColor: theme.colors.primaryContainer }]}>
-          <Card.Content style={styles.discountContent}>
-            <Text style={[styles.discountText, { color: theme.colors.onPrimaryContainer }]}>
-              ✓ Verified user discount applied
-            </Text>
-          </Card.Content>
-        </Card>
-      )}
-
-      {isEventPlace ? (
-        // Custom layout for Event Place
-        <View style={styles.eventPlaceContainer}>
-          {slots.map((slot, index) => (
-            <View key={slot.id || `${slot.start_time}-${index}`} style={styles.eventPlaceSlot}>
-              {renderEventPlaceSlot(slot, index)}
-            </View>
-          ))}
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: theme.colors.onBackground }]}>
+            {isEventPlace ? "Select Time Block" : "Select a Time Slot"}
+          </Text>
+          <Text style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+            {isEventPlace 
+              ? "Choose your preferred time block for the event" 
+              : "Choose your preferred time for the event"
+            }
+          </Text>
         </View>
-      ) : (
-        // Original FlatList for other facilities
-        <FlatList
-          data={slots}
-          keyExtractor={(item, index) => item.id || `${item.start_time}-${index}`}
-          renderItem={renderRegularSlot}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
 
+        {isUserVerified && (
+          <Card style={[styles.discountBanner, { backgroundColor: theme.colors.primaryContainer }]}>
+            <Card.Content style={styles.discountContent}>
+              <Text style={[styles.discountText, { color: theme.colors.onPrimaryContainer }]}>
+                ✓ Verified user discount applied
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
+
+        {isEventPlace ? (
+          // Custom layout for Event Place
+          <View style={styles.eventPlaceContainer}>
+            {slots.map((slot, index) => (
+              <View key={slot.id || `${slot.start_time}-${index}`} style={styles.eventPlaceSlot}>
+                {renderEventPlaceSlot(slot, index)}
+              </View>
+            ))}
+          </View>
+        ) : (
+          // Regular slots layout
+          <View style={styles.regularSlotsContainer}>
+            {slots.map((slot, index) => (
+              <View key={slot.id || `${slot.start_time}-${index}`} style={styles.regularSlot}>
+                {renderRegularSlot({ item: slot })}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Spacer to ensure content doesn't get hidden behind the selection card */}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+
+      {/* Fixed selection card at the bottom */}
       {selected && (
-        <Card style={styles.selectionCard}>
-          <Card.Content style={styles.selectionContent}>
-            <View style={styles.selectedInfo}>
-              <Text style={[styles.selectedLabel, { color: theme.colors.onSurfaceVariant }]}>
-                {isEventPlace ? "Selected Time Block:" : "Selected Time:"}
-              </Text>
-              <Text style={[styles.selectedTime, { color: theme.colors.onBackground }]}>
-                {selected.label}
-              </Text>
-              <Text style={[styles.selectedFee, { color: theme.colors.onBackground }]}>
-                Fee: ₱{selected.displayFee}
-                {selected.isDiscounted && (
-                  <Text style={[styles.originalFeeLarge, { color: theme.colors.onSurfaceVariant }]}>
-                    {" "}(Originally ₱{selected.fee})
-                  </Text>
-                )}
-              </Text>
-            </View>
-            <Button 
-              mode="contained" 
-              onPress={handleNext}
-              style={styles.nextButton}
-              contentStyle={styles.buttonContent}
-              labelStyle={styles.buttonLabel}
-            >
-              Continue to Summary
-            </Button>
-          </Card.Content>
-        </Card>
+        <View style={styles.selectionContainer}>
+          <Card style={styles.selectionCard}>
+            <Card.Content style={styles.selectionContent}>
+              <View style={styles.selectedInfo}>
+                <Text style={[styles.selectedLabel, { color: theme.colors.onSurfaceVariant }]}>
+                  {isEventPlace ? "Selected Time Block:" : "Selected Time:"}
+                </Text>
+                <Text style={[styles.selectedTime, { color: theme.colors.onBackground }]}>
+                  {selected.label}
+                </Text>
+                <Text style={[styles.selectedFee, { color: theme.colors.onBackground }]}>
+                  Fee: ₱{selected.displayFee}
+                  {selected.isDiscounted && (
+                    <Text style={[styles.originalFeeLarge, { color: theme.colors.onSurfaceVariant }]}>
+                      {" "}(Originally ₱{selected.fee})
+                    </Text>
+                  )}
+                </Text>
+              </View>
+              <Button 
+                mode="contained" 
+                onPress={handleNext}
+                style={styles.nextButton}
+                contentStyle={styles.buttonContent}
+                labelStyle={styles.buttonLabel}
+              >
+                Continue to Summary
+              </Button>
+            </Card.Content>
+          </Card>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -327,8 +338,14 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 20
+    paddingTop: 10,
+    paddingBottom: 100, // Extra padding for the fixed selection card
   },
   header: {
     alignItems: 'center',
@@ -349,7 +366,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   discountBanner: {
-    marginBottom: 20,
+    marginBottom: 24,
     borderRadius: 12,
   },
   discountContent: {
@@ -363,12 +380,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   eventPlaceContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingBottom: 20,
+    marginBottom: 20,
   },
   eventPlaceSlot: {
     marginBottom: 16,
+  },
+  regularSlotsContainer: {
+    marginBottom: 20,
+  },
+  regularSlot: {
+    marginBottom: 8,
   },
   eventPlaceCard: {
     borderRadius: 16,
@@ -427,11 +448,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   // Regular Facility Styles
-  list: { 
-    paddingBottom: 20,
-  },
   card: {
-    marginVertical: 6,
     borderRadius: 12,
     padding: 20,
     elevation: 2,
@@ -503,14 +520,22 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#ef4444',
   },
+  selectionContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    backgroundColor: 'transparent',
+  },
   selectionCard: {
     borderRadius: 16,
-    elevation: 4,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    marginTop: 10,
   },
   selectionContent: {
     paddingVertical: 20,
@@ -551,5 +576,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Satoshi-Medium',
     fontWeight: '400',
+  },
+  bottomSpacer: {
+    height: 120, // Space for the fixed selection card
   },
 });

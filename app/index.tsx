@@ -2,7 +2,7 @@ import FormTextFields from "@/components/FormTextFields";
 import LoadingModal from "@/components/LoadingModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { retrieveToken } from "@/utils/TokenStorage";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, View } from "react-native";
 import { Button, Card, Dialog, Portal, Text, useTheme } from "react-native-paper";
@@ -88,7 +88,7 @@ export default function Index() {
         <Card style={styles.formCard}>
           <Card.Content style={styles.formContent}>
             <Text variant="titleLarge" style={[styles.formTitle, { color: theme.colors.onBackground }]}>
-              Welcome Back
+              Login
             </Text>
             <Text variant="bodyMedium" style={[styles.formSubtitle, { color: theme.colors.onSurfaceVariant }]}>
               Sign in to your account
@@ -112,6 +112,21 @@ export default function Index() {
                 placeholder="Enter your password"
                 style={styles.input}
               />
+            </View>
+
+            {/* Updated Forgot Password Link */}
+            <View style={styles.forgotPasswordContainer}>
+              <Link href={'/forgot'} asChild>
+                <Button 
+                  mode="text" 
+                  compact
+                  onPress={() => router.push('/forgot')}
+                  style={styles.forgotPasswordButton}
+                  labelStyle={[styles.forgotPasswordText, { color: theme.colors.primary }]}
+                >
+                  Forgot Password?
+                </Button>
+              </Link>
             </View>
 
             <Button 
@@ -246,10 +261,23 @@ const styles = StyleSheet.create({
   },
   formFields: {
     gap: 16,
-    marginBottom: 24,
+    marginBottom: 16, // Reduced to accommodate forgot password
   },
   input: {
     marginBottom: 0,
+  },
+  // New styles for forgot password
+  forgotPasswordContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  forgotPasswordButton: {
+    alignSelf: 'center',
+  },
+  forgotPasswordText: {
+    fontFamily: 'Satoshi-Medium',
+    fontWeight: '400',
+    fontSize: 14,
   },
   loginButton: {
     borderRadius: 12,

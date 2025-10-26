@@ -7,11 +7,13 @@ import React, { useEffect, useState } from 'react';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { theme } from '../theme';
 
+
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
+  
 
   // Custom Fonts
   const [fontsLoaded, fontError] = useFonts({
@@ -54,6 +56,9 @@ export default function RootLayout() {
             <Stack.Screen name="index" />
             <Stack.Screen name="registration" />
             <Stack.Screen name="(auth)" />
+            <Stack.Screen name="forgot" />
+            <Stack.Screen name="otp-verification" />
+            <Stack.Screen name="reset-password" />
           </Stack>
         </AuthProvider>
       </PaperProvider>
