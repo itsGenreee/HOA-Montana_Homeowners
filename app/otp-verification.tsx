@@ -3,22 +3,22 @@ import ForgotPasswordService from '@/services/ForgotPasswordService';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  View,
 } from 'react-native';
 import {
-    Button,
-    Card,
-    Dialog,
-    Portal,
-    Text,
-    TextInput,
-    useTheme,
+  Button,
+  Card,
+  Dialog,
+  Portal,
+  Text,
+  TextInput,
+  useTheme,
 } from 'react-native-paper';
 
 export default function OTPVerificationScreen() {

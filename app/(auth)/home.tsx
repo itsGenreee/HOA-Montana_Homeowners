@@ -1,16 +1,17 @@
 import { useReservationService } from "@/services/ReservationService";
+import { lightTheme } from "@/theme";
 import { ReservationQRCode } from "@/utils/QrCodeGenerator";
 import dayjs from "dayjs";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Platform, RefreshControl, SafeAreaView, ScrollView, StatusBar, StyleSheet, View } from "react-native";
-import { Button, Card, Chip, Modal, Portal, Text } from "react-native-paper";
+import { Button, Card, Chip, Divider, Modal, Portal, Surface, Text } from "react-native-paper";
 
 type Reservation = {
   id: number;
-  user_id: number;            // required for signature verification
-  facility: string;           // facility name (display)
-  facility_id: number;        // required for signature verification
+  user_id: number;
+  facility: string;
+  facility_id: number;
   date: string;
   start_time: string;
   end_time: string;
@@ -26,10 +27,36 @@ export default function Home() {
   const [visible, setVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  const sortReservations = (reservations: Reservation[]): Reservation[] => {
+    return reservations.sort((a, b) => {
+      const statusPriority: Record<string, number> = {
+        'pending': 1,
+        'confirmed': 2,
+        'checked_in': 3,
+        'canceled': 4
+      };
+      
+      const statusA = statusPriority[a.status] || 999;
+      const statusB = statusPriority[b.status] || 999;
+      
+      if (statusA !== statusB) {
+        return statusA - statusB;
+      }
+      
+      const dateCompare = a.date.localeCompare(b.date);
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+      
+      return a.start_time.localeCompare(b.start_time);
+    });
+  };
+
   const fetchReservations = async () => {
     try {
       const data = await getUserReservations();
-      setReservations(data);
+      const sortedReservations = sortReservations(data);
+      setReservations(sortedReservations);
     } catch (error) {
       console.error("Failed to fetch reservations:", error);
     }
@@ -72,6 +99,8 @@ export default function Home() {
         return "CONFIRMED";
       case "checked_in":
         return "CHECKED IN";
+      case "canceled":
+        return "CANCELED";
       default:
         return status.toUpperCase();
     }
@@ -80,36 +109,76 @@ export default function Home() {
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "pending":
-        return { chip: styles.pending, text: styles.pendingText };
+        return { 
+          chip: { backgroundColor: lightTheme.colors.secondaryContainer }, 
+          text: { color: lightTheme.colors.onSecondaryContainer } 
+        };
       case "confirmed":
-        return { chip: styles.confirmed, text: styles.confirmedText };
+        return { 
+          chip: { backgroundColor: lightTheme.colors.primaryContainer }, 
+          text: { color: lightTheme.colors.onPrimaryContainer } 
+        };
       case "checked_in":
-        return { chip: styles.checkedIn, text: styles.checkedInText };
+        return { 
+          chip: { backgroundColor: lightTheme.colors.tertiaryContainer }, 
+          text: { color: lightTheme.colors.onTertiaryContainer } 
+        };
+      case "canceled":
+        return { 
+          chip: { backgroundColor: lightTheme.colors.errorContainer }, 
+          text: { color: lightTheme.colors.onErrorContainer } 
+        };
       default:
-        return { chip: styles.pending, text: styles.pendingText };
+        return { 
+          chip: { backgroundColor: lightTheme.colors.surfaceVariant }, 
+          text: { color: lightTheme.colors.onSurfaceVariant } 
+        };
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "clock-outline";
+      case "confirmed":
+        return "check-circle-outline";
+      case "checked_in":
+        return "map-marker-check-outline";
+      case "canceled":
+        return "cancel";
+      default:
+        return "help-circle-outline";
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text variant="headlineMedium" style={styles.header}>
-        My Reservations
-      </Text>
+      <Surface style={styles.headerSurface} elevation={1}>
+        <Text variant="headlineMedium" style={styles.header}>
+          My Reservations
+        </Text>
+      </Surface>
       
       {reservations.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text variant="bodyLarge" style={styles.emptyText}>
-            No reservations found
-          </Text>
-          <Button 
-            mode="outlined" 
-            onPress={onRefresh}
-            style={styles.refreshButton}
-            icon="refresh"
-          >
-            Refresh
-          </Button>
-        </View>
+        <Surface style={styles.emptyState} elevation={1}>
+          <View style={styles.emptyContent}>
+            <Text variant="titleMedium" style={styles.emptyTitle}>
+              No Reservations
+            </Text>
+            <Text variant="bodyMedium" style={styles.emptyText}>
+              You don't have any reservations yet.
+            </Text>
+            <Button 
+              mode="contained" 
+              onPress={onRefresh}
+              style={styles.refreshButton}
+              icon="refresh"
+              contentStyle={styles.buttonContent}
+            >
+              Refresh
+            </Button>
+          </View>
+        </Surface>
       ) : (
         <ScrollView 
           contentContainerStyle={styles.scroll}
@@ -117,8 +186,8 @@ export default function Home() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#0000ff']} // Customize as needed
-              tintColor={'#0000ff'} // Customize as needed
+              colors={[lightTheme.colors.primary]}
+              tintColor={lightTheme.colors.primary}
             />
           }
           showsVerticalScrollIndicator={false}
@@ -127,48 +196,82 @@ export default function Home() {
             const start = dayjs(`${item.date.split("T")[0]}T${item.start_time}`);
             const end = dayjs(`${item.date.split("T")[0]}T${item.end_time}`);
             const statusStyle = getStatusStyle(item.status);
+            const isActionable = item.status === "confirmed";
 
             return (
               <Card 
                 key={item.id} 
-                style={styles.card} 
+                style={[
+                  styles.card,
+                  isActionable && styles.actionableCard
+                ]} 
                 onPress={() => openQrModal(item)}
+                mode="elevated"
+                elevation={2}
               >
-                <Card.Content>
+                <Card.Content style={styles.cardContent}>
                   {/* Facility name */}
                   <Text variant="titleLarge" style={styles.facility}>
                     {item.facility || "Unknown Facility"}
                   </Text>
 
+                  <Divider style={styles.divider} />
+
                   {/* Date and Time */}
-                  <Text variant="titleMedium" style={styles.date}>
-                    {start.format("MMMM D, YYYY")}
-                  </Text>
-                  <Text variant="bodyMedium" style={styles.time}>
-                    {start.format("h:mm A")} - {end.format("h:mm A")}
-                  </Text>
+                  <View style={styles.timeContainer}>
+                    <View style={styles.timeRow}>
+                      <Text variant="bodyMedium" style={styles.timeLabel}>
+                        Date:
+                      </Text>
+                      <Text variant="bodyMedium" style={styles.timeValue}>
+                        {start.format("MMMM D, YYYY")}
+                      </Text>
+                    </View>
+                    <View style={styles.timeRow}>
+                      <Text variant="bodyMedium" style={styles.timeLabel}>
+                        Time:
+                      </Text>
+                      <Text variant="bodyMedium" style={styles.timeValue}>
+                        {start.format("h:mm A")} - {end.format("h:mm A")}
+                      </Text>
+                    </View>
+                  </View>
 
                   {/* Status Chip */}
-                  <Chip
-                    style={[styles.statusChip, statusStyle.chip]}
-                    textStyle={[styles.statusText, statusStyle.text]}
-                    compact
-                  >
-                    {getStatusDisplay(item.status)} 
-                  </Chip>
+                  <View style={styles.statusContainer}>
+                    <Chip
+                      icon={getStatusIcon(item.status)}
+                      style={[styles.statusChip, statusStyle.chip]}
+                      textStyle={[styles.statusText, statusStyle.text]}
+                      compact
+                    >
+                      {getStatusDisplay(item.status)}
+                    </Chip>
+                  </View>
 
-                  {/* Simple conditional remarks */}
+                  {/* Status-specific messages */}
                   {item.status === "pending" && (
-                    <Text style={{marginTop: 8, color: "#d97706", fontSize: 12}}>
-                      Confirm at HOA Office
-                    </Text>
+                    <Surface style={styles.messageSurface} elevation={0}>
+                      <Text variant="bodySmall" style={styles.pendingMessage}>
+                        Please confirm your reservation at the HOA office
+                      </Text>
+                    </Surface>
                   )}
 
-                  {/* QR Code Hint for confirmed reservations */}
                   {item.status === "confirmed" && (
-                    <Text variant="bodySmall" style={styles.qrHint}>
-                      Tap to view QR code
-                    </Text>
+                    <Surface style={styles.messageSurface} elevation={0}>
+                      <Text variant="bodySmall" style={styles.confirmedMessage}>
+                        Tap to view QR code for facility access
+                      </Text>
+                    </Surface>
+                  )}
+
+                  {item.status === "canceled" && (
+                    <Surface style={styles.messageSurface} elevation={0}>
+                      <Text variant="bodySmall" style={styles.canceledMessage}>
+                        This reservation has been canceled
+                      </Text>
+                    </Surface>
                   )}
                 </Card.Content>
               </Card>
@@ -179,32 +282,55 @@ export default function Home() {
 
       {/* QR Code Modal */}
       <Portal>
-        <Modal visible={visible} onDismiss={closeQrModal} contentContainerStyle={styles.modal}>
-          {selectedReservation && (
-            <View style={{ alignItems: "center" }}>
-              <Text variant="titleMedium" style={{ marginBottom: 16 }}>
-                Reservation QR Code
-              </Text>
-              <Text variant="bodyMedium" style={{ marginBottom: 8, textAlign: 'center' }}>
-                Show this code at the facility to check in
-              </Text>
-              <ReservationQRCode
-                reservation={{
-                  reservation_token: selectedReservation.reservation_token,
-                  digital_signature: selectedReservation.digital_signature,
-                }}
-                size={300}
-              />
+        <Modal 
+          visible={visible} 
+          onDismiss={closeQrModal} 
+          contentContainerStyle={styles.modal}
+        >
+          <Surface style={styles.modalSurface} elevation={4}>
+            {selectedReservation && (
+              <View style={styles.modalContent}>
+                <Text variant="titleLarge" style={styles.modalTitle}>
+                  Reservation QR Code
+                </Text>
+                
+                <Divider style={styles.modalDivider} />
+                
+                <Text variant="bodyMedium" style={styles.modalSubtitle}>
+                  Show this code at the facility to check in
+                </Text>
+                
+                <View style={styles.qrContainer}>
+                  <ReservationQRCode
+                    reservation={{
+                      reservation_token: selectedReservation.reservation_token,
+                      digital_signature: selectedReservation.digital_signature,
+                    }}
+                    size={280}
+                  />
+                </View>
 
-              <Button 
-                mode="contained" 
-                onPress={closeQrModal} 
-                style={{ marginTop: 16 }}
-              >
-                Close
-              </Button>
-            </View>
-          )}
+                <Text variant="bodySmall" style={styles.modalNote}>
+                  Facility: {selectedReservation.facility}
+                </Text>
+                <Text variant="bodySmall" style={styles.modalNote}>
+                  Date: {dayjs(selectedReservation.date.split("T")[0]).format("MMMM D, YYYY")}
+                </Text>
+                <Text variant="bodySmall" style={styles.modalNote}>
+                  Time: {selectedReservation.start_time} - {selectedReservation.end_time}
+                </Text>
+
+                <Button 
+                  mode="contained" 
+                  onPress={closeQrModal} 
+                  style={styles.closeButton}
+                  contentStyle={styles.buttonContent}
+                >
+                  Close
+                </Button>
+              </View>
+            )}
+          </Surface>
         </Modal>
       </Portal>
     </SafeAreaView>
@@ -214,86 +340,158 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: lightTheme.colors.background,
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-    paddingHorizontal: 20,
-    paddingBottom: 20
   },
-  scroll: { 
-    paddingBottom: 20 
+  headerSurface: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: lightTheme.colors.primaryContainer,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   header: { 
-    marginVertical: 16,
+    color: lightTheme.colors.onPrimaryContainer,
+    textAlign: 'center',
   },
-  card: { 
+  scroll: { 
+    padding: 20,
+    paddingBottom: 20,
+  },
+  card: {
     marginBottom: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    borderRadius: 12,
+    backgroundColor: lightTheme.colors.surface,
   },
-  date: { 
-    marginBottom: 4, 
-    fontWeight: "bold" 
+  actionableCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: lightTheme.colors.primary,
   },
-  time: { 
-    marginBottom: 4, 
-    color: "#555" 
+  cardContent: {
+    paddingVertical: 16,
   },
   facility: { 
-    marginBottom: 8, 
-    fontWeight: "500" 
+    marginBottom: 12,
+    color: lightTheme.colors.onSurface,
   },
-  statusChip: { 
-    alignSelf: "flex-start",
-    marginTop: 8,
+  divider: {
+    marginBottom: 12,
+    backgroundColor: lightTheme.colors.outlineVariant,
+  },
+  timeContainer: {
+    marginBottom: 12,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  timeLabel: {
+    color: lightTheme.colors.onSurfaceVariant,
+    fontWeight: '500',
+  },
+  timeValue: {
+    color: lightTheme.colors.onSurface,
+    fontWeight: '400',
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    marginBottom: 8,
+  },
+  statusChip: {
+    borderRadius: 8,
   },
   statusText: {
     fontWeight: "bold",
     fontSize: 12,
   },
-  pending: { 
-    backgroundColor: "#FFE1B0" 
+  messageSurface: {
+    backgroundColor: lightTheme.colors.surfaceVariant,
+    padding: 8,
+    borderRadius: 6,
+    marginTop: 4,
   },
-  pendingText: { 
-    color: "#AA6C39" 
+  pendingMessage: {
+    color: lightTheme.colors.onSecondaryContainer,
+    textAlign: 'center',
   },
-  confirmed: { 
-    backgroundColor: "#D4EDDA" 
+  confirmedMessage: {
+    color: lightTheme.colors.onPrimaryContainer,
+    textAlign: 'center',
   },
-  confirmedText: { 
-    color: "#155724" 
-  },
-  checkedIn: { 
-    backgroundColor: "#D1ECF1" 
-  },
-  checkedInText: { 
-    color: "#0C5460" 
-  },
-  modal: {
-    backgroundColor: "white",
-    padding: 20,
-    margin: 20,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  qrHint: {
-    marginTop: 8,
-    color: "#666",
-    fontStyle: "italic",
+  canceledMessage: {
+    color: lightTheme.colors.onErrorContainer,
+    textAlign: 'center',
   },
   emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 16,
+    margin: 20,
+    borderRadius: 16,
+    backgroundColor: lightTheme.colors.surface,
+    padding: 32,
+  },
+  emptyContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    marginBottom: 8,
+    color: lightTheme.colors.onSurface,
+    textAlign: 'center',
   },
   emptyText: {
-    color: "#666",
-    textAlign: "center",
+    marginBottom: 24,
+    color: lightTheme.colors.onSurfaceVariant,
+    textAlign: 'center',
   },
   refreshButton: {
-    marginTop: 8,
+    borderRadius: 8,
+  },
+  modal: {
+    padding: 20,
+  },
+  modalSurface: {
+    borderRadius: 16,
+    padding: 24,
+    backgroundColor: lightTheme.colors.surface,
+  },
+  modalContent: {
+    alignItems: "center",
+  },
+  modalTitle: {
+    marginBottom: 8,
+    color: lightTheme.colors.onSurface,
+    textAlign: 'center',
+  },
+  modalDivider: {
+    width: '100%',
+    marginBottom: 16,
+    backgroundColor: lightTheme.colors.outlineVariant,
+  },
+  modalSubtitle: {
+    marginBottom: 24,
+    color: lightTheme.colors.onSurfaceVariant,
+    textAlign: 'center',
+  },
+  qrContainer: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: lightTheme.colors.outlineVariant,
+  },
+  modalNote: {
+    color: lightTheme.colors.onSurfaceVariant,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  closeButton: {
+    marginTop: 20,
+    borderRadius: 8,
+    width: '100%',
+  },
+  buttonContent: {
+    paddingVertical: 6,
   },
 });

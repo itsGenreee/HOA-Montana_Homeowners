@@ -30,9 +30,15 @@ class ForgotPasswordService {
   async sendResetLink(email: string): Promise<ApiResponse> {
     try {
       const response = await api.post('/password/send-link', { email });
+      if(__DEV__){
+        console.log(response);
+      }
       return response.data;
     } catch (error: any) {
       // Re-throw the error to let the component handle it
+      if(__DEV__){
+        console.log(error);
+      }
       throw error;
     }
   }
@@ -40,8 +46,14 @@ class ForgotPasswordService {
     async verifyOtp(data: VerifyOtpRequest): Promise<ApiResponse> {
     try {
       const response = await api.post('/password/verify-otp', data);
+      if(__DEV__){
+        console.log(response);
+      }
       return response.data;
     } catch (error: any) {
+      if(__DEV__){
+        console.log(error);
+      }
       throw error;
     }
   }
@@ -52,8 +64,14 @@ class ForgotPasswordService {
   async resetPassword(data: ResetPasswordRequest): Promise<ApiResponse> {
     try {
       const response = await api.post('/password/reset-password', data);
+      if(__DEV__){
+        console.log(response);
+      }
       return response.data;
     } catch (error: any) {
+      if(__DEV__){
+        console.log(error);
+      }
       throw error;
     }
   }
