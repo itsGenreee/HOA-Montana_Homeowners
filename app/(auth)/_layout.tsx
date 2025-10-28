@@ -6,10 +6,11 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Tabs, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { useTheme } from "react-native-paper";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 
 
 export default function AuthLayout() {
+  const insets = useSafeAreaInsets();
   const { user, isLoading } = useAuth();
   const theme = useTheme();
   const router = useRouter();
@@ -46,6 +47,7 @@ export default function AuthLayout() {
           shadowOffset: { width: 0, height: -1 },
           shadowOpacity: 0.1,
           shadowRadius: 2,
+          paddingBottom: insets.bottom,
         },
       }}
     >
