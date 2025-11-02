@@ -69,12 +69,12 @@ export default function Summary() {
     showDialog("Processing reservation...");
 
     try {
-      console.log(event_type);
-      console.log(guest_count);
-      console.log(facility_id);
-      console.log(date);
-      console.log(start_time);
-      console.log(end_time);
+      console.log("Event Type:" ,event_type);
+      console.log("Guest Count:",guest_count);
+      console.log("Facility ID:",facility_id);
+      console.log("Date:",date);
+      console.log("Start Time:",start_time);
+      console.log("End Time:",end_time);
       await reservationService.create({
         event_type,
         guest_count,

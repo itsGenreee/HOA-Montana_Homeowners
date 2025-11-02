@@ -122,7 +122,6 @@ export default function ForgotPasswordScreen() {
                   keyboardType="email-address"
                   placeholder="Enter your registered email"
                   style={[styles.input, { opacity: 0.6 }]}
-                  leftIcon="email"
                   disabled={true}
                 />
               </View>
