@@ -1,5 +1,6 @@
 import FormTextFields from '@/components/FormTextFields';
 import LoadingModal from '@/components/LoadingModal';
+import ForgotPasswordService from '@/services/ForgotPasswordService';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -41,12 +42,37 @@ export default function ForgotPasswordScreen() {
     const hideDialog = () => setDialogVisible(false);
 
     const handleSendResetLink = async () => {
-        // Show feature unavailable message
-        showDialog(
-            'Feature Temporarily Unavailable', 
-            'Password reset functionality is currently under maintenance. Please contact community support for immediate assistance with password recovery.'
-        );
+    if (!email) {
+        showDialog('Error', 'Please enter your email address');
         return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showDialog('Error', 'Please enter a valid email address');
+        return;
+    }
+
+    setIsLoading(true);
+    try {
+        const response = await ForgotPasswordService.sendResetLink(email);
+        
+        // Stop loading immediately
+        setIsLoading(false);
+        
+        if (response.status === 'success') {
+        // Use replace instead of push to avoid going back to loading screen
+        router.replace({
+            pathname: '/otp-verification',
+            params: { email: email }
+        });
+        } else {
+        showDialog('Error', response.message || 'Something went wrong.');
+        }
+    } catch (error: any) {
+        setIsLoading(false); // Stop loading on error too
+        showDialog('Error', error.message);
+    }
     };
 
     const handleBackToLogin = () => {
@@ -60,7 +86,7 @@ export default function ForgotPasswordScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Back Button - Now aligned to left */}
+          {/* Back Button */}
           <View style={styles.backButtonContainer}>
             <Button
               mode="text"
@@ -88,29 +114,17 @@ export default function ForgotPasswordScreen() {
           <Card style={styles.formCard}>
             <Card.Content style={styles.formContent}>
               <View style={styles.headerIcon}>
-                <Text style={[styles.iconText, { color: theme.colors.error }]}>
-                  🔧
+                <Text style={[styles.iconText, { color: theme.colors.primary }]}>
+                  🔒
                 </Text>
               </View>
-              
-              {/* Maintenance Notice */}
-              <Card style={[styles.maintenanceCard, { backgroundColor: theme.colors.errorContainer }]}>
-                <Card.Content style={styles.maintenanceContent}>
-                  <Text variant="titleSmall" style={[styles.maintenanceTitle, { color: theme.colors.onErrorContainer }]}>
-                    ⚠️ Under Maintenance
-                  </Text>
-                  <Text variant="bodySmall" style={[styles.maintenanceMessage, { color: theme.colors.onErrorContainer }]}>
-                    Password reset is temporarily unavailable. Our team is working to restore this feature.
-                  </Text>
-                </Card.Content>
-              </Card>
               
               <Text variant="titleLarge" style={[styles.formTitle, { color: theme.colors.onBackground }]}>
                 Forgot Password?
               </Text>
               
               <Text variant="bodyMedium" style={[styles.formSubtitle, { color: theme.colors.onSurfaceVariant }]}>
-                This feature is currently undergoing maintenance. Please contact support for assistance.
+                Enter your email address and we'll send you a link to reset your password.
               </Text>
 
               <View style={styles.formFields}>
@@ -121,27 +135,26 @@ export default function ForgotPasswordScreen() {
                   autoCapitalize="none"
                   keyboardType="email-address"
                   placeholder="Enter your registered email"
-                  style={[styles.input, { opacity: 0.6 }]}
-                  disabled={true}
+                  style={styles.input}
                 />
               </View>
 
               <Button
                 mode="contained"
                 onPress={handleSendResetLink}
-                disabled={true}
-                style={[styles.resetButton, { backgroundColor: theme.colors.surfaceDisabled }]}
+                disabled={isLoading}
+                style={styles.resetButton}
                 contentStyle={styles.buttonContent}
-                labelStyle={[styles.buttonLabel, { color: theme.colors.onSurfaceDisabled }]}
-                icon="tooltip-account"
+                labelStyle={styles.buttonLabel}
+                icon="send"
               >
-                Send Reset Link (Unavailable)
+                Send Reset Link
               </Button>
 
               {/* Help Text */}
               <View style={styles.helpContainer}>
                 <Text variant="bodySmall" style={[styles.helpText, { color: theme.colors.onSurfaceVariant }]}>
-                  📞 For immediate assistance, please visit the administration office or call community support.
+                  💡 Remember to check your spam folder if you don't see the email in your inbox.
                 </Text>
               </View>
             </Card.Content>
@@ -149,14 +162,14 @@ export default function ForgotPasswordScreen() {
 
           {/* Support Section */}
           <View style={styles.supportContainer}>
-            <Text variant="bodyMedium" style={[styles.supportText, { color: theme.colors.error }]}>
-              🔒 Password reset temporarily disabled - Contact support
+            <Text variant="bodyMedium" style={[styles.supportText, { color: theme.colors.onSurfaceVariant }]}>
+              Need help? Contact community support.
             </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Loading Modal - Keep but it won't show since we're not loading */}
+      {/* Loading Modal */}
       <LoadingModal visible={isLoading} message="Sending reset link..." />
 
       {/* Success/Error Dialog */}
@@ -199,10 +212,10 @@ const styles = StyleSheet.create({
   },
   backButtonContainer: {
     marginBottom: 20,
-    // Removed alignItems: 'center' to allow left alignment
+    alignItems: 'flex-start',
   },
   backButton: {
-    alignSelf: 'flex-start', // Changed from 'center' to 'flex-start'
+    alignSelf: 'flex-start',
   },
   backButtonText: {
     fontFamily: 'Satoshi-Medium',
@@ -245,28 +258,6 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 48,
-  },
-  // Maintenance Card Styles
-  maintenanceCard: {
-    width: '100%',
-    marginBottom: 20,
-    borderRadius: 12,
-  },
-  maintenanceContent: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-  },
-  maintenanceTitle: {
-    fontFamily: 'Satoshi-Bold',
-    fontWeight: '400',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  maintenanceMessage: {
-    fontFamily: 'Satoshi-Regular',
-    fontWeight: '400',
-    textAlign: 'center',
-    lineHeight: 18,
   },
   formTitle: {
     fontFamily: 'Satoshi-Bold',
@@ -319,14 +310,12 @@ const styles = StyleSheet.create({
   supportContainer: {
     alignItems: 'center',
     marginTop: 20,
-    padding: 16,
-    borderRadius: 8,
-    backgroundColor: 'rgba(211, 47, 47, 0.1)',
   },
   supportText: {
-    fontFamily: 'Satoshi-Medium',
+    fontFamily: 'Satoshi-Regular',
     fontWeight: '400',
-    textAlign: 'center',
+    fontStyle: 'italic',
+    opacity: 0.7,
   },
   dialog: {
     borderRadius: 16,
