@@ -1,7 +1,7 @@
 import axios from "axios";
 import { clearToken, retrieveToken, saveToken } from './TokenStorage';
 
-const BASE_URL = 'https://hoa-montana.up.railway.app/api';
+const BASE_URL = 'https://hoa-metro-montana.up.railway.app/api';
 
 const api = axios.create({
     baseURL: BASE_URL,
